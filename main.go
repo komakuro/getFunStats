@@ -10,8 +10,8 @@ import (
 )
 
 type settings struct {
-	LoginId  string `json:'loginId'`
-	Password string `json:'password'`
+	LoginId  string
+	Password string
 }
 
 func loadConfig() settings {
