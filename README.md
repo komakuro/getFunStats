@@ -5,7 +5,7 @@ scrapingFanbox
 下記のようにsettings.jsonというファイルを作って保存してから実行してください。
 ```
 {
-    "creatorId" : "あなたのログインID",
+    "creatorId" : "あなたのクリエイターID",
     "loginId" : "あなたのログインID",
     "password" : "あなたのパスワード"
 }
