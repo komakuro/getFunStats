@@ -3,15 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sclevine/agouti"
 )
 
 type settings struct {
-	LoginId  string
-	Password string
+	CreatorId string
+	LoginId   string
+	Password  string
 }
 
 func loadConfig() settings {
@@ -27,7 +31,33 @@ func loadConfig() settings {
 	return cfg
 }
 
+func ItoS(screenshotNum *int) string {
+	ret := strconv.Itoa(*screenshotNum)
+	*screenshotNum += 1
+	return ret
+}
+
+func getFile(filename string) *os.File {
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return f
+}
+
+func writeFile(f *os.File, writeString string) {
+	d := []byte(writeString + "\n")
+
+	// 3. 書き込み
+	_, err := f.Write(d)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
+	var screenshotNum int = 1
 	sets := loadConfig()
 
 	// chromeを起動
@@ -36,8 +66,8 @@ func main() {
 	defer driver.Stop() // chromeを終了
 
 	page, _ := driver.NewPage()
-	page.Navigate("https://hogehogefuga.fanbox.cc/manage/relationships")
-	page.Screenshot("Screenshot01.png")
+	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
+	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[1]/label/input")
 	count, _ := loginIdForm.Count()
@@ -51,7 +81,7 @@ func main() {
 
 	passwordForm.Fill(sets.Password)
 
-	page.Screenshot("Screenshot02.png")
+	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/button[1]")
 	loginSubmitCount, _ := loginSubmit.Count()
@@ -61,7 +91,52 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
-	page.Screenshot("Screenshot03.png")
+	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
+
+	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
+	supportUsersCount, _ := supportUsers.Count()
+	fmt.Println("supportUsersCount", supportUsersCount)
+
+	f := getFile("output.csv")
+	defer f.Close()
+
+	for i := 0; i < supportUsersCount; i++ {
+		supportUsers.At(i).Click()
+
+		time.Sleep(1 * time.Second)
+
+		records := page.AllByClass("SupportTransactionSection__Td-sc-17tc9du-3")
+		recordsCount, _ := records.Count()
+		title, _ := page.Title()
+		fmt.Println("user", title, "recordsCount", recordsCount)
+
+		userName := strings.Split(title, "｜")[0]
+
+		var oneLine string = ""
+
+		for j := 0; j < recordsCount; j++ {
+			record := records.At(j)
+			txt, _ := record.Text()
+
+			fmt.Println("txt", txt)
+
+			oneLine += txt
+
+			if j%2 != 0 {
+				writeFile(f, userName+"\t"+oneLine)
+				oneLine = ""
+			} else {
+				oneLine += "\t"
+			}
+		}
+
+		time.Sleep(1 * time.Second)
+
+		page.Back()
+
+		page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+	}
+
 }
