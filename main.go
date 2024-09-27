@@ -125,10 +125,10 @@ func main() {
 			oneLine += txt
 
 			if j%2 != 0 {
-				writeFile(f, userName+"\t"+oneLine)
+				writeFile(f, userName+","+oneLine)
 				oneLine = ""
 			} else {
-				oneLine += "\t"
+				oneLine += ","
 			}
 		}
 
