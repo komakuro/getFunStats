@@ -35,7 +35,7 @@ func loadConfig() settings {
 	//フォーマットを開く
 	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
 	if err != nil {
-		fmt.Println(err)
+		panic("loadConfig excelize.OpenFile err:" + err.Error())
 	}
 	defer f.Close()
 
@@ -152,11 +152,11 @@ func main() {
 
 			fmt.Println("txt", txt)
 
-			if j == 1 {
+			if j%2 == 0 {
 				oneLine.PayTime = txt
 			}
 
-			if j == 2 {
+			if j%2 == 1 {
 				oneLine.PayAmount = txt
 			}
 
