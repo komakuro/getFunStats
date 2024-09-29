@@ -19,7 +19,7 @@ type settings struct {
 	LoginId   string
 	Password  string
 	Duration  string
-	Amount    int
+	Amount    string
 	Condition string
 }
 
@@ -27,7 +27,7 @@ type settings struct {
 type payStats struct {
 	UserName  string
 	PayTime   string
-	PayAmount int
+	PayAmount string
 }
 
 func loadConfig() settings {
@@ -49,12 +49,12 @@ func loadConfig() settings {
 	//_ = json.NewDecoder(f).Decode(&cfg)
 
 	//フォーマット内の指定されたセルの値を取得
-	cfg.CreatorId = f.GetCellValue("設定", "C6")
-	cfg.LoginId = f.GetCellValue("設定", "C4")
-	cfg.Password = f.GetCellValue("設定", "C5")
-	cfg.Duration = f.GetCellValue("設定", "C10")
-	cfg.Amount = f.GetCellValue("設定", "C11")
-	cfg.Condition = f.GetCellValue("設定", "C12")
+	cfg.CreatorId, _ = f.GetCellValue("設定", "C6")
+	cfg.LoginId, _ = f.GetCellValue("設定", "C4")
+	cfg.Password, _ = f.GetCellValue("設定", "C5")
+	cfg.Duration, _ = f.GetCellValue("設定", "C10")
+	cfg.Amount, _ = f.GetCellValue("設定", "C11")
+	cfg.Condition, _ = f.GetCellValue("設定", "C12")
 
 	return cfg
 }
@@ -85,7 +85,7 @@ func writeFile(f *os.File, writeString string) {
 }
 
 func main() {
-	var screenshotNum int = 1
+	//var screenshotNum int = 1
 	sets := loadConfig()
 
 	// chromeを起動
