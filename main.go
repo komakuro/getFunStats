@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -10,23 +9,52 @@ import (
 	"time"
 
 	"github.com/sclevine/agouti"
+
+	"github.com/xuri/excelize/v2"
 )
 
+// 設定情報の構造体
 type settings struct {
 	CreatorId string
 	LoginId   string
 	Password  string
+	Duration  string
+	Amount    int
+	Condition string
+}
+
+// 支援者情報の構造体
+type payStats struct {
+	UserName  string
+	PayTime   string
+	PayAmount int
 }
 
 func loadConfig() settings {
-	f, err := os.Open("settings.json")
+
+	//フォーマットを開く
+	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
 	if err != nil {
-		panic("loadConfig os.Open err:" + err.Error())
+		fmt.Println(err)
 	}
 	defer f.Close()
 
+	//f, err := os.Open("settings.json")
+	//if err != nil {
+	//	panic("loadConfig os.Open err:" + err.Error())
+	//}
+	//defer f.Close()
+
 	var cfg settings
-	_ = json.NewDecoder(f).Decode(&cfg)
+	//_ = json.NewDecoder(f).Decode(&cfg)
+
+	//フォーマット内の指定されたセルの値を取得
+	cfg.CreatorId = f.GetCellValue("設定", "C6")
+	cfg.LoginId = f.GetCellValue("設定", "C4")
+	cfg.Password = f.GetCellValue("設定", "C5")
+	cfg.Duration = f.GetCellValue("設定", "C10")
+	cfg.Amount = f.GetCellValue("設定", "C11")
+	cfg.Condition = f.GetCellValue("設定", "C12")
 
 	return cfg
 }
@@ -67,7 +95,7 @@ func main() {
 
 	page, _ := driver.NewPage()
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
-	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[1]/label/input")
 	count, _ := loginIdForm.Count()
@@ -81,7 +109,7 @@ func main() {
 
 	passwordForm.Fill(sets.Password)
 
-	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/button[1]")
 	loginSubmitCount, _ := loginSubmit.Count()
@@ -91,7 +119,7 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
-	page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	time.Sleep(2 * time.Second)
 
@@ -114,7 +142,9 @@ func main() {
 
 		userName := strings.Split(title, "｜")[0]
 
-		var oneLine string = ""
+		var oneLine payStats
+
+		oneLine.UserName = userName
 
 		for j := 0; j < recordsCount; j++ {
 			record := records.At(j)
@@ -122,21 +152,30 @@ func main() {
 
 			fmt.Println("txt", txt)
 
-			oneLine += txt
-
-			if j%2 != 0 {
-				writeFile(f, userName+","+oneLine)
-				oneLine = ""
-			} else {
-				oneLine += ","
+			if j == 1 {
+				oneLine.PayTime = txt
 			}
+
+			if j == 2 {
+				oneLine.PayAmount = txt
+			}
+
+			//oneLine += txt
+
+			//if j%2 != 0 {
+			//	writeFile(f, userName+","+oneLine)
+			//	oneLine = ""
+			//} else {
+			//	oneLine += ","
+			//}
+
 		}
 
 		time.Sleep(1 * time.Second)
 
 		page.Back()
 
-		page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+		//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 	}
 
 }
