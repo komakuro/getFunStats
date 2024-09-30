@@ -21,6 +21,7 @@ type settings struct {
 	Duration  string
 	Amount    string
 	Condition string
+	GetMonth string
 }
 
 // 支援者情報の構造体
@@ -130,6 +131,8 @@ func main() {
 	f := getFile("output.csv")
 	defer f.Close()
 
+	var payStatsList []string
+
 	for i := 0; i < supportUsersCount; i++ {
 		supportUsers.At(i).Click()
 
@@ -171,11 +174,139 @@ func main() {
 
 		}
 
+		//取得した支援者名、支払い日時、支払金額をスライスに格納
+		payStatsList = append(payStatsList, oneLine)
+
 		time.Sleep(1 * time.Second)
 
 		page.Back()
 
 		//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
+	}
+
+	//スライスの情報を整理するためのマップを作成
+	var userPaySeqMap map[string]map[string]string
+
+	//リストに格納された内容の数だけマップに情報を格納
+	for i := 0; i < len(payStatsList); i++ {
+
+		//マップ内に該当の支援者名が存在するか確認
+		if _, ok := map[key]; ok {
+		
+			tmpPaySeqMap = userPaySeqMap[key]
+		
+		}else{
+
+			var tmpPaySeqmap map[string]string
+		
+		}
+
+		var tmpPayAmount := payStatsList[i]
+
+		if _, ok := map[key]; ok {
+
+			tmpPaySeqMap[key]= tmpPaySeqMap[key] + tmpPayAmount
+
+		}else{
+
+			tmpPaySeqMap[key] = tmpPayAmount
+
+		}
+
+		userPaySeqMap[key] = tmpPaySeqMap 
+
+	}
+
+	var counter int = 0
+	var userResultMap map[string]bool
+	var checkTime time = time.Now()
+
+	for i := 0 ; i < len(userPaySeqMap);i++{
+
+		for iYearMonth := checkTime ; iYearMonth < checkTime - settings.GetMonth ; iYearMonth-- {
+
+			if settings.Condition == "継続"{
+
+				iYearMonth = time.Date()
+
+				if userPaySeqMap[user] == settings.Amount {
+
+					counter = counter + 1
+
+				}else{
+
+					if settings.Duration == "+" {
+
+						if counter >= settings.Duration {
+
+							userResultMap[user] = true
+
+						}else{
+
+							userResultMap[user] = false
+
+						}
+
+					}else{
+
+						if counter % settings.Duration == 0 {
+
+							userResultMap[user] = true
+
+						}else{
+
+							userResultMap[user] = false
+
+						}
+
+					}
+
+					break
+
+				}
+
+			}else if  settings.Condition == "累積" {
+
+				if userPaySeqMap[i] == settings.Amount {
+
+					counter = counter + 1
+
+				}
+
+			}
+
+		}
+
+		if settings.Condition == "累積" {
+
+			if settings.Duration == "+" {
+
+				if counter >= settings.Duration {
+
+					userResultMap[user] = true
+
+				}else{
+
+					userResultMap[user] = false
+
+				}
+
+			}else{
+
+				if counter % settings.Duration == 0 {
+
+					userResultMap[user] = true
+					
+				}else{
+
+					userResultMap[user] = false
+
+				}
+
+			}
+
+		}
+
 	}
 
 }
