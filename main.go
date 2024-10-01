@@ -217,40 +217,40 @@ func main() {
 			tmpPaySeqMap[tmpPayDate] = tmpPayAmount
 		}
 
-		userPaySeqMap[tmpPayUser] = tmpPaySeqMap[tmpPayUser]
+		userPaySeqMap[tmpPayUser] = tmpPaySeqMap
 	}
 
 	var counter int = 0
 	var userResultMap map[string]bool
-	var checkTime time = time.Now()
-	var durationTime int = strings.TrimRight(sets.Duration, "+")
+	var checkTime = time.Now()
+	var durationTime int = strconv.Atoi(strings.TrimRight(sets.Duration, "+"))
 
 	//支援者ごとの支払い情報から入力条件を満たす支援者を判定
-	for i := 0; i < len(userPaySeqMap); i++ {
-		for iYearMonth := checkTime; iYearMonth < checkTime-sets.GetMonth+1; iYearMonth-- {
+	for iUser, iPaySeqMap := range userPaySeqMap {
+		for iYearMonth := checkTime; iYearMonth < checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0); iYearMonth.AddDate(0, -1, 0) {
 			if sets.Condition == "継続" {
 				iYearMonth = time.Date()
 
-				if userPaySeqMap[user] == sets.Amount {
+				if iPaySeqMap[iUser] == sets.Amount {
 					counter = counter + 1
 				} else {
 					if strings.HasSuffix(sets.Duration, "+") == true {
 						if counter >= durationTime {
-							userResultMap[user] = true
+							userResultMap[iUser] = true
 						} else {
-							userResultMap[user] = false
+							userResultMap[iUser] = false
 						}
 					} else {
 						if counter%durationTime == 0 {
-							userResultMap[user] = true
+							userResultMap[iUser] = true
 						} else {
-							userResultMap[user] = false
+							userResultMap[iUser] = false
 						}
 					}
 					break
 				}
 			} else if sets.Condition == "累積" {
-				if userPaySeqMap[i] == sets.Amount {
+				if iPaySeqMap[iUser] == sets.Amount {
 					counter = counter + 1
 				}
 			}
@@ -259,18 +259,18 @@ func main() {
 		if sets.Condition == "累積" {
 			if sets.Duration == "+" {
 				if counter >= durationTime {
-					userResultMap[user] = true
+					userResultMap[iUser] = true
 
 				} else {
-					userResultMap[user] = false
+					userResultMap[iUser] = false
 
 				}
 			} else {
 				if counter%durationTime == 0 {
-					userResultMap[user] = true
+					userResultMap[iUser] = true
 
 				} else {
-					userResultMap[user] = false
+					userResultMap[iUser] = false
 
 				}
 			}
@@ -295,22 +295,24 @@ func main() {
 	var yearMonthColoumId int = 4
 
 	//判定した情報をExcelに出力していく
-	for i := 0; i < len(userPaySeqMap); i++ {
-		f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, userRowId+i), userPaySeqMap[i])
+	for iUser, iPaySeqMap := range userPaySeqMap {
+		f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, userRowId), iUser)
 
-		if userResultMap[i] == true {
-			f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, userRowId+i), "対象")
+		if userResultMap[iUser] == true {
+			f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, userRowId), "対象")
 
 		}
 
-		for iYearMonth := checkTime - sets.GetMonth + 1; checkTime-sets.GetMonth < iYearMonth; iYearMonth++ {
+		for iYearMonth := checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0); checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0) < iYearMonth; iYearMonth.AddDate(0, 1, 0) {
 			if firstIter == true {
+				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, yearMonthRowId), "支援者名")
+				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, yearMonthRowId), "対象か？")
 				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, yearMonthRowId), iYearMonth)
 
 			}
 
-			if _, ok := userPaySeqMap[i]; ok {
-				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, userRowId+i), userPaySeqMap[i][iYearMonth])
+			if _, ok := iPaySeqMap[iUser]; ok {
+				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[iYearMonth])
 
 			}
 			yearMonthColoumId = yearMonthColoumId + 1
@@ -320,4 +322,7 @@ func main() {
 		firstIter = false
 
 	}
+	f.Save()
+	f.Close()
+
 }
