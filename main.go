@@ -31,6 +31,15 @@ type payStats struct {
 	PayAmount string
 }
 
+func readCell(f *excelize.File, sheetName string, cellPosition string) string {
+	ret, err := f.GetCellValue(sheetName, cellPosition)
+	if err != nil {
+		panic("readCell err:" + err.Error())
+	}
+
+	return ret
+}
+
 func loadConfig() settings {
 
 	//フォーマットを開く
@@ -40,23 +49,16 @@ func loadConfig() settings {
 	}
 	defer f.Close()
 
-	//f, err := os.Open("settings.json")
-	//if err != nil {
-	//	panic("loadConfig os.Open err:" + err.Error())
-	//}
-	//defer f.Close()
-
 	var cfg settings
-	//_ = json.NewDecoder(f).Decode(&cfg)
 
 	//フォーマット内の指定されたセルの値を取得
-	cfg.CreatorId, _ = f.GetCellValue("設定", "C6")
-	cfg.LoginId, _ = f.GetCellValue("設定", "C4")
-	cfg.Password, _ = f.GetCellValue("設定", "C5")
-	cfg.Duration, _ = f.GetCellValue("設定", "C10")
-	cfg.Amount, _ = f.GetCellValue("設定", "C11")
-	cfg.Condition, _ = f.GetCellValue("設定", "C12")
-	cfg.GetMonth, _ = f.GetCellValue("設定", "C13")
+	cfg.CreatorId = readCell(f, "設定", "C6")
+	cfg.LoginId = readCell(f, "設定", "C4")
+	cfg.Password = readCell(f, "設定", "C5")
+	cfg.Duration = readCell(f, "設定", "C10")
+	cfg.Amount = readCell(f, "設定", "C11")
+	cfg.Condition = readCell(f, "設定", "C12")
+	cfg.GetMonth = readCell(f, "設定", "C13")
 
 	return cfg
 }
@@ -67,7 +69,7 @@ func ItoS(screenshotNum *int) string {
 	return ret
 }
 
-func getFile(filename string) *os.File {
+func GetFile(filename string) *os.File {
 	f, err := os.Create(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -76,7 +78,7 @@ func getFile(filename string) *os.File {
 	return f
 }
 
-func writeFile(f *os.File, writeString string) {
+func WriteFile(f *os.File, writeString string) {
 	d := []byte(writeString + "\n")
 
 	// 3. 書き込み
@@ -132,10 +134,7 @@ func main() {
 	supportUsersCount, _ := supportUsers.Count()
 	fmt.Println("supportUsersCount", supportUsersCount)
 
-	f := getFile("output.csv")
-	defer f.Close()
-
-	var payStatsList [][]string
+	var payStatsList []payStats
 
 	//各支援者ページに遷移して支払い日時と支払金額をスライスに格納していく
 	for i := 0; i < supportUsersCount; i++ {
@@ -166,23 +165,14 @@ func main() {
 
 			if j%2 == 1 {
 				oneLine.PayAmount = txt
+				//一行分の情報を取り終わったので、取得した支援者名、支払い日時、支払金額をスライスに格納
+				payStatsList = append(payStatsList, oneLine)
+				//次の一行の情報の取得処理を開始するにあたって、oneLineを初期化する
+				oneLine = payStats{}
+				oneLine.UserName = userName
 			}
 
-			//oneLine += txt
-
-			//if j%2 != 0 {
-			//	writeFile(f, userName+","+oneLine)
-			//	oneLine = ""
-			//} else {
-			//	oneLine += ","
-			//}
-
 		}
-
-		oneLineList := [][]string{{oneLine.UserName, oneLine.PayTime, oneLine.PayAmount}}
-
-		//取得した支援者名、支払い日時、支払金額をスライスに格納
-		payStatsList = append(payStatsList, oneLineList)
 
 		time.Sleep(1 * time.Second)
 
@@ -192,23 +182,23 @@ func main() {
 	}
 
 	//スライスの情報を整理するためのマップを作成
-	var userPaySeqMap map[string]map[string]string
+	var userPaySeqMap map[string]map[string]string = make(map[string]map[string]string)
 
 	//スライスに格納された内容の数だけマップに情報を格納
 	for i := 0; i < len(payStatsList); i++ {
 
-		var tmpPayUser string = payStatsList[i][0]
+		var tmpPayUser string = payStatsList[i].UserName
 		var tmpPaySeqMap map[string]string
 
 		//マップ内に該当の支援者名が存在するか確認し、存在しなければ格納用のマップを作成
 		if _, ok := userPaySeqMap[tmpPayUser]; ok {
 			tmpPaySeqMap = userPaySeqMap[tmpPayUser]
-		} else {
-			//var tmpPaySeqMap map[string]string
 		}
 
-		var tmpPayDate string = payStatsList[i][1]
-		var tmpPayAmount string = payStatsList[i][2]
+		var tmpPayDate string = payStatsList[i].PayTime
+		//TODO:ここらへんにPaytimeから年月取ってくる処理を記述
+		var tmpPayAmount string = payStatsList[i].PayAmount
+		//TODO:ここらへんに\を抜いてintに関する処理
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
 		if _, ok := userPaySeqMap[tmpPayDate]; ok {
@@ -221,20 +211,22 @@ func main() {
 	}
 
 	var counter int = 0
-	var userResultMap map[string]bool
+	var userResultMap = make(map[string]bool)
 	var checkTime = time.Now()
-	var durationTime int = strconv.Atoi(strings.TrimRight(sets.Duration, "+"))
+	durationTime, _ := strconv.Atoi(strings.TrimRight(sets.Duration, "+"))
 
 	//支援者ごとの支払い情報から入力条件を満たす支援者を判定
 	for iUser, iPaySeqMap := range userPaySeqMap {
-		for iYearMonth := checkTime; iYearMonth < checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0); iYearMonth.AddDate(0, -1, 0) {
+		m, _ := strconv.Atoi(sets.GetMonth)
+		//ここら辺ちょっと細かく調べる↓
+		for iYearMonth := checkTime; iYearMonth.After(checkTime.AddDate(0, -m+1, 0)); iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			if sets.Condition == "継続" {
-				iYearMonth = time.Date()
+				yearMonth := GetYearMonthFromTime(iYearMonth)
 
-				if iPaySeqMap[iUser] == sets.Amount {
+				if iPaySeqMap[yearMonth] == sets.Amount {
 					counter = counter + 1
 				} else {
-					if strings.HasSuffix(sets.Duration, "+") == true {
+					if strings.HasSuffix(sets.Duration, "+") {
 						if counter >= durationTime {
 							userResultMap[iUser] = true
 						} else {
@@ -296,23 +288,25 @@ func main() {
 
 	//判定した情報をExcelに出力していく
 	for iUser, iPaySeqMap := range userPaySeqMap {
-		f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, userRowId), iUser)
+		f.SetCellValue(outputSheetName, coordinatesToCellName(userColoumId, userRowId), iUser)
 
-		if userResultMap[iUser] == true {
-			f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, userRowId), "対象")
-
+		if userResultMap[iUser] {
+			f.SetCellValue(outputSheetName, coordinatesToCellName(resultColoumId, userRowId), "対象")
 		}
 
-		for iYearMonth := checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0); checkTime.AddDate(0, strconv.Atoi(sets.GetMonth+1), 0) < iYearMonth; iYearMonth.AddDate(0, 1, 0) {
-			if firstIter == true {
-				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, yearMonthRowId), "支援者名")
-				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, yearMonthRowId), "対象か？")
-				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, yearMonthRowId), iYearMonth)
+		m, _ := strconv.Atoi(sets.GetMonth)
+
+		//TODO細かい正しさは確かめる↓
+		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Before(checkTime); iYearMonth = iYearMonth.AddDate(0, 1, 0) {
+			if firstIter {
+				f.SetCellValue(outputSheetName, coordinatesToCellName(userColoumId, yearMonthRowId), "支援者名")
+				f.SetCellValue(outputSheetName, coordinatesToCellName(resultColoumId, yearMonthRowId), "対象か？")
+				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), iYearMonth)
 
 			}
 
 			if _, ok := iPaySeqMap[iUser]; ok {
-				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[iYearMonth])
+				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[GetYearMonthFromTime(iYearMonth)])
 
 			}
 			yearMonthColoumId = yearMonthColoumId + 1
@@ -325,4 +319,16 @@ func main() {
 	f.Save()
 	f.Close()
 
+}
+
+func coordinatesToCellName(columnId int, rowId int) string {
+	ret, err := excelize.CoordinatesToCellName(columnId, rowId)
+	if err != nil {
+		panic("coordinatesToCellName err:" + err.Error())
+	}
+	return ret
+}
+
+func GetYearMonthFromTime(tm time.Time) string {
+	return tm.Format("2006-01")
 }
