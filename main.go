@@ -89,7 +89,6 @@ func WriteFile(f *os.File, writeString string) {
 }
 
 func main() {
-	//var screenshotNum int = 1
 	sets := loadConfig()
 
 	// chromeを起動
@@ -100,7 +99,6 @@ func main() {
 	//支援者一覧ページを開く
 	page, _ := driver.NewPage()
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
-	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
 	//ログインを行う
 	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[1]/label/input")
@@ -115,19 +113,13 @@ func main() {
 
 	passwordForm.Fill(sets.Password)
 
-	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
-
 	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/button[1]")
 	loginSubmitCount, _ := loginSubmit.Count()
 	fmt.Println("loginSubmitCount", loginSubmitCount)
 
 	loginSubmit.Submit()
 
-	time.Sleep(3 * time.Second)
-
-	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
-
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	//支援者一覧を取得
 	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
@@ -178,7 +170,6 @@ func main() {
 
 		page.Back()
 
-		//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 	}
 
 	//スライスの情報を整理するためのマップを作成
@@ -196,13 +187,18 @@ func main() {
 		}
 
 		var tmpPayDate string = payStatsList[i].PayTime
-		//TODO:ここらへんにPaytimeから年月取ってくる処理を記述
-		var tmpPayAmount string = payStatsList[i].PayAmount
-		//TODO:ここらへんに\を抜いてintに関する処理
+		tmpPayDate = tmpPayDate[:7]
+
+		var tmpPayAmount string = strings.TrimLeft(payStatsList[i].PayAmount, "\\")
+		var tmpPayAmountInt, _ = strconv.Atoi(tmpPayAmount)
+		var tmpPayAmount2, _ = strconv.Atoi(tmpPaySeqMap[tmpPayDate])
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
 		if _, ok := userPaySeqMap[tmpPayDate]; ok {
-			tmpPaySeqMap[tmpPayDate] = tmpPaySeqMap[tmpPayDate] + tmpPayAmount
+			var AmountSum int = tmpPayAmount2 + tmpPayAmountInt
+			var AmountSumStr string = strconv.Itoa(AmountSum)
+			tmpPaySeqMap[tmpPayDate] = "\\" + AmountSumStr
+
 		} else {
 			tmpPaySeqMap[tmpPayDate] = tmpPayAmount
 		}
