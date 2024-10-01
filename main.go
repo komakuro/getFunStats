@@ -21,7 +21,7 @@ type settings struct {
 	Duration  string
 	Amount    string
 	Condition string
-	GetMonth string
+	GetMonth  string
 }
 
 // 支援者情報の構造体
@@ -56,6 +56,7 @@ func loadConfig() settings {
 	cfg.Duration, _ = f.GetCellValue("設定", "C10")
 	cfg.Amount, _ = f.GetCellValue("設定", "C11")
 	cfg.Condition, _ = f.GetCellValue("設定", "C12")
+	cfg.GetMonth, _ = f.GetCellValue("設定", "C13")
 
 	return cfg
 }
@@ -94,10 +95,12 @@ func main() {
 	driver.Start()
 	defer driver.Stop() // chromeを終了
 
+	//支援者一覧ページを開く
 	page, _ := driver.NewPage()
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
 	//page.Screenshot("Screenshot" + ItoS(&screenshotNum) + ".png")
 
+	//ログインを行う
 	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[1]/label/input")
 	count, _ := loginIdForm.Count()
 	fmt.Println("count", count)
@@ -124,6 +127,7 @@ func main() {
 
 	time.Sleep(2 * time.Second)
 
+	//支援者一覧を取得
 	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
 	supportUsersCount, _ := supportUsers.Count()
 	fmt.Println("supportUsersCount", supportUsersCount)
@@ -131,8 +135,9 @@ func main() {
 	f := getFile("output.csv")
 	defer f.Close()
 
-	var payStatsList []string
+	var payStatsList [][]string
 
+	//各支援者ページに遷移して支払い日時と支払金額をスライスに格納していく
 	for i := 0; i < supportUsersCount; i++ {
 		supportUsers.At(i).Click()
 
@@ -174,8 +179,10 @@ func main() {
 
 		}
 
+		oneLineList := [][]string{{oneLine.UserName, oneLine.PayTime, oneLine.PayAmount}}
+
 		//取得した支援者名、支払い日時、支払金額をスライスに格納
-		payStatsList = append(payStatsList, oneLine)
+		payStatsList = append(payStatsList, oneLineList)
 
 		time.Sleep(1 * time.Second)
 
@@ -187,126 +194,130 @@ func main() {
 	//スライスの情報を整理するためのマップを作成
 	var userPaySeqMap map[string]map[string]string
 
-	//リストに格納された内容の数だけマップに情報を格納
+	//スライスに格納された内容の数だけマップに情報を格納
 	for i := 0; i < len(payStatsList); i++ {
 
-		//マップ内に該当の支援者名が存在するか確認
-		if _, ok := map[key]; ok {
-		
-			tmpPaySeqMap = userPaySeqMap[key]
-		
-		}else{
+		var tmpPayUser string = payStatsList[i][0]
+		var tmpPaySeqMap map[string]string
 
-			var tmpPaySeqmap map[string]string
-		
+		//マップ内に該当の支援者名が存在するか確認し、存在しなければ格納用のマップを作成
+		if _, ok := userPaySeqMap[tmpPayUser]; ok {
+			tmpPaySeqMap = userPaySeqMap[tmpPayUser]
+		} else {
+			//var tmpPaySeqMap map[string]string
 		}
 
-		var tmpPayAmount := payStatsList[i]
+		var tmpPayDate string = payStatsList[i][1]
+		var tmpPayAmount string = payStatsList[i][2]
 
-		if _, ok := map[key]; ok {
-
-			tmpPaySeqMap[key]= tmpPaySeqMap[key] + tmpPayAmount
-
-		}else{
-
-			tmpPaySeqMap[key] = tmpPayAmount
-
+		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
+		if _, ok := userPaySeqMap[tmpPayDate]; ok {
+			tmpPaySeqMap[tmpPayDate] = tmpPaySeqMap[tmpPayDate] + tmpPayAmount
+		} else {
+			tmpPaySeqMap[tmpPayDate] = tmpPayAmount
 		}
 
-		userPaySeqMap[key] = tmpPaySeqMap 
-
+		userPaySeqMap[tmpPayUser] = tmpPaySeqMap[tmpPayUser]
 	}
 
 	var counter int = 0
 	var userResultMap map[string]bool
 	var checkTime time = time.Now()
+	var durationTime int = strings.TrimRight(sets.Duration, "+")
 
-	for i := 0 ; i < len(userPaySeqMap);i++{
-
-		for iYearMonth := checkTime ; iYearMonth < checkTime - settings.GetMonth ; iYearMonth-- {
-
-			if settings.Condition == "継続"{
-
+	//支援者ごとの支払い情報から入力条件を満たす支援者を判定
+	for i := 0; i < len(userPaySeqMap); i++ {
+		for iYearMonth := checkTime; iYearMonth < checkTime-sets.GetMonth+1; iYearMonth-- {
+			if sets.Condition == "継続" {
 				iYearMonth = time.Date()
 
-				if userPaySeqMap[user] == settings.Amount {
-
+				if userPaySeqMap[user] == sets.Amount {
 					counter = counter + 1
-
-				}else{
-
-					if settings.Duration == "+" {
-
-						if counter >= settings.Duration {
-
+				} else {
+					if strings.HasSuffix(sets.Duration, "+") == true {
+						if counter >= durationTime {
 							userResultMap[user] = true
-
-						}else{
-
+						} else {
 							userResultMap[user] = false
-
 						}
-
-					}else{
-
-						if counter % settings.Duration == 0 {
-
+					} else {
+						if counter%durationTime == 0 {
 							userResultMap[user] = true
-
-						}else{
-
+						} else {
 							userResultMap[user] = false
-
 						}
-
 					}
-
 					break
-
 				}
-
-			}else if  settings.Condition == "累積" {
-
-				if userPaySeqMap[i] == settings.Amount {
-
+			} else if sets.Condition == "累積" {
+				if userPaySeqMap[i] == sets.Amount {
 					counter = counter + 1
-
 				}
-
 			}
-
 		}
 
-		if settings.Condition == "累積" {
-
-			if settings.Duration == "+" {
-
-				if counter >= settings.Duration {
-
+		if sets.Condition == "累積" {
+			if sets.Duration == "+" {
+				if counter >= durationTime {
 					userResultMap[user] = true
 
-				}else{
-
+				} else {
 					userResultMap[user] = false
 
 				}
-
-			}else{
-
-				if counter % settings.Duration == 0 {
-
+			} else {
+				if counter%durationTime == 0 {
 					userResultMap[user] = true
-					
-				}else{
 
+				} else {
 					userResultMap[user] = false
 
 				}
-
 			}
-
 		}
-
 	}
 
+	//フォーマットを開く
+	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
+	if err != nil {
+		panic("loadConfig excelize.OpenFile err:" + err.Error())
+	}
+
+	var outputSheetName string = "リスト"
+
+	//まずは出力欄の情報をクリア
+
+	var userColoumId int = 2
+	var resultColoumId int = 3
+	var userRowId int = 3
+	var yearMonthRowId int = 2
+	var firstIter bool = true
+	var yearMonthColoumId int = 4
+
+	//判定した情報をExcelに出力していく
+	for i := 0; i < len(userPaySeqMap); i++ {
+		f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(userColoumId, userRowId+i), userPaySeqMap[i])
+
+		if userResultMap[i] == true {
+			f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(resultColoumId, userRowId+i), "対象")
+
+		}
+
+		for iYearMonth := checkTime - sets.GetMonth + 1; checkTime-sets.GetMonth < iYearMonth; iYearMonth++ {
+			if firstIter == true {
+				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, yearMonthRowId), iYearMonth)
+
+			}
+
+			if _, ok := userPaySeqMap[i]; ok {
+				f.SetCellValue(outputSheetName, excelize.CoordinatesToCellName(yearMonthColoumId, userRowId+i), userPaySeqMap[i][iYearMonth])
+
+			}
+			yearMonthColoumId = yearMonthColoumId + 1
+
+		}
+		userRowId = userRowId + 1
+		firstIter = false
+
+	}
 }
