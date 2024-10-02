@@ -312,7 +312,7 @@ func main() {
 				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), yearMonth)
 
 			}
-			if _, ok := iPaySeqMap[iUser]; ok {
+			if _, ok := iPaySeqMap[yearMonth]; ok {
 				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[yearMonth])
 
 			}
