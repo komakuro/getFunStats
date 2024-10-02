@@ -277,12 +277,14 @@ func main() {
 	}
 
 	var outputSheetName string = "リスト"
-	//var tmpSheetName string = "テンプレートリスト"
-	//tmpSheetIndex := f.getSheetIndex(tmpSheetName)
+	var tmpSheetName string = "テンプレートリスト"
+	tmpSheetIndex, _ := f.GetSheetIndex(tmpSheetName)
 
-	//出力前にリストの情報をクリアしたいが、代わりに一度リストシートを削除してテンプレートリストをコピーする
-	//f.DeleteSheet(outputSheetName)
-	//f.CopySheet(tmpSheetIndex, outputSheetName)
+	//リストの情報をクリアする代わりに一度リストシートを削除してテンプレートリストをコピーする
+	f.DeleteSheet(outputSheetName)
+	f.NewSheet(outputSheetName)
+	outputSheetIndex, _ := f.GetSheetIndex(outputSheetName)
+	f.CopySheet(tmpSheetIndex, outputSheetIndex)
 	//f.MoveSheet(outputSheetName, "設定")
 
 	var userColoumId int = 2
