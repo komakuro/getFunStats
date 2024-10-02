@@ -101,19 +101,19 @@ func main() {
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
 
 	//ログインを行う
-	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[1]/label/input")
+	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/fieldset[1]/label/input")
 	count, _ := loginIdForm.Count()
 	fmt.Println("count", count)
 
 	loginIdForm.Fill(sets.LoginId)
 
-	passwordForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/fieldset[2]/label/input")
+	passwordForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/fieldset[2]/label/input")
 	pasCount, _ := passwordForm.Count()
 	fmt.Println("pasCount", pasCount)
 
 	passwordForm.Fill(sets.Password)
 
-	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/div[2]/div/div/div/form/button[1]")
+	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/button[1]")
 	loginSubmitCount, _ := loginSubmit.Count()
 	fmt.Println("loginSubmitCount", loginSubmitCount)
 
@@ -179,7 +179,7 @@ func main() {
 	for i := 0; i < len(payStatsList); i++ {
 
 		var tmpPayUser string = payStatsList[i].UserName
-		var tmpPaySeqMap map[string]string
+		var tmpPaySeqMap map[string]string = make(map[string]string)
 
 		//マップ内に該当の支援者名が存在するか確認し、存在しなければ格納用のマップを作成
 		if _, ok := userPaySeqMap[tmpPayUser]; ok {
@@ -189,8 +189,8 @@ func main() {
 		var tmpPayDate string = payStatsList[i].PayTime
 		tmpPayDate = tmpPayDate[:7]
 
-		var tmpPayAmount string = strings.TrimLeft(payStatsList[i].PayAmount, "\\")
-		var tmpPayAmountInt, _ = strconv.Atoi(tmpPayAmount)
+		var tmpPayAmount string = payStatsList[i].PayAmount
+		var tmpPayAmountInt, _ = strconv.Atoi(strings.TrimLeft(tmpPayAmount, "\\"))
 		var tmpPayAmount2, _ = strconv.Atoi(tmpPaySeqMap[tmpPayDate])
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
@@ -201,6 +201,7 @@ func main() {
 
 		} else {
 			tmpPaySeqMap[tmpPayDate] = tmpPayAmount
+
 		}
 
 		userPaySeqMap[tmpPayUser] = tmpPaySeqMap
@@ -215,7 +216,7 @@ func main() {
 	for iUser, iPaySeqMap := range userPaySeqMap {
 		m, _ := strconv.Atoi(sets.GetMonth)
 		//ここら辺ちょっと細かく調べる↓
-		for iYearMonth := checkTime; iYearMonth.After(checkTime.AddDate(0, -m+1, 0)); iYearMonth = iYearMonth.AddDate(0, -1, 0) {
+		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			if sets.Condition == "継続" {
 				yearMonth := GetYearMonthFromTime(iYearMonth)
 
@@ -245,7 +246,7 @@ func main() {
 		}
 
 		if sets.Condition == "累積" {
-			if sets.Duration == "+" {
+			if strings.HasSuffix(sets.Duration, "+") {
 				if counter >= durationTime {
 					userResultMap[iUser] = true
 
@@ -272,15 +273,20 @@ func main() {
 	}
 
 	var outputSheetName string = "リスト"
+	//var tmpSheetName string = "テンプレートリスト"
+	//tmpSheetIndex := f.getSheetIndex(tmpSheetName)
 
-	//まずは出力欄の情報をクリア
+	//出力前にリストの情報をクリアしたいが、代わりに一度リストシートを削除してテンプレートリストをコピーする
+	//f.DeleteSheet(outputSheetName)
+	//f.CopySheet(tmpSheetIndex, outputSheetName)
+	//f.MoveSheet(outputSheetName, "設定")
 
 	var userColoumId int = 2
 	var resultColoumId int = 3
 	var userRowId int = 3
+	var yearMonthColoumId int = 4
 	var yearMonthRowId int = 2
 	var firstIter bool = true
-	var yearMonthColoumId int = 4
 
 	//判定した情報をExcelに出力していく
 	for iUser, iPaySeqMap := range userPaySeqMap {
@@ -293,14 +299,13 @@ func main() {
 		m, _ := strconv.Atoi(sets.GetMonth)
 
 		//TODO細かい正しさは確かめる↓
-		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Before(checkTime); iYearMonth = iYearMonth.AddDate(0, 1, 0) {
+		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Compare(checkTime) <= 0; iYearMonth = iYearMonth.AddDate(0, 1, 0) {
 			if firstIter {
 				f.SetCellValue(outputSheetName, coordinatesToCellName(userColoumId, yearMonthRowId), "支援者名")
 				f.SetCellValue(outputSheetName, coordinatesToCellName(resultColoumId, yearMonthRowId), "対象か？")
-				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), iYearMonth)
+				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), GetYearMonthFromTime(iYearMonth))
 
 			}
-
 			if _, ok := iPaySeqMap[iUser]; ok {
 				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[GetYearMonthFromTime(iYearMonth)])
 
