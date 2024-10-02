@@ -207,6 +207,8 @@ func main() {
 		userPaySeqMap[tmpPayUser] = tmpPaySeqMap
 	}
 
+	fmt.Println(userPaySeqMap)
+
 	var counter int = 0
 	var userResultMap = make(map[string]bool)
 	var checkTime = time.Now()
@@ -266,6 +268,8 @@ func main() {
 		}
 	}
 
+	fmt.Println(userResultMap)
+
 	//フォーマットを開く
 	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
 	if err != nil {
@@ -300,14 +304,16 @@ func main() {
 
 		//TODO細かい正しさは確かめる↓
 		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Compare(checkTime) <= 0; iYearMonth = iYearMonth.AddDate(0, 1, 0) {
+			yearMonth := GetYearMonthFromTime(iYearMonth)
+
 			if firstIter {
 				f.SetCellValue(outputSheetName, coordinatesToCellName(userColoumId, yearMonthRowId), "支援者名")
 				f.SetCellValue(outputSheetName, coordinatesToCellName(resultColoumId, yearMonthRowId), "対象か？")
-				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), GetYearMonthFromTime(iYearMonth))
+				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, yearMonthRowId), yearMonth)
 
 			}
 			if _, ok := iPaySeqMap[iUser]; ok {
-				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[GetYearMonthFromTime(iYearMonth)])
+				f.SetCellValue(outputSheetName, coordinatesToCellName(yearMonthColoumId, userRowId), iPaySeqMap[yearMonth])
 
 			}
 			yearMonthColoumId = yearMonthColoumId + 1
