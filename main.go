@@ -89,6 +89,7 @@ func WriteFile(f *os.File, writeString string) {
 }
 
 func main() {
+	//設定の取得
 	sets := loadConfig()
 
 	// chromeを起動
@@ -101,19 +102,22 @@ func main() {
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
 
 	//ログインを行う
-	loginIdForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/fieldset[1]/label/input")
-	count, _ := loginIdForm.Count()
-	fmt.Println("count", count)
+	fillForm := page.AllByClass("sc-bn9ph6-6")
+	fillCount, _ := fillForm.Count()
+	fmt.Println("fillCount", fillCount)
 
-	loginIdForm.Fill(sets.LoginId)
+	for i := 0; i < fillCount; i++ {
+		fmt.Println(fillForm.At(i).Text())
 
-	passwordForm := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/fieldset[2]/label/input")
-	pasCount, _ := passwordForm.Count()
-	fmt.Println("pasCount", pasCount)
+		if i == 0 {
+			fillForm.At(i).Fill(sets.LoginId)
+		}
+		if i == 1 {
+			fillForm.At(i).Fill(sets.Password)
+		}
+	}
 
-	passwordForm.Fill(sets.Password)
-
-	loginSubmit := page.AllByXPath("//*[@id=\"app-mount-point\"]/div/div/div[4]/div[1]/form/button[1]")
+	loginSubmit := page.AllByClass("sc-2o1uwj-9")
 	loginSubmitCount, _ := loginSubmit.Count()
 	fmt.Println("loginSubmitCount", loginSubmitCount)
 
