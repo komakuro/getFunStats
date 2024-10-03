@@ -214,6 +214,7 @@ func main() {
 	var counter int = 0
 	var userResultMap = make(map[string]bool)
 	var checkTime = time.Now()
+	var checkMonth = GetYearMonthFromTime(checkTime)
 	durationTime, _ := strconv.Atoi(strings.TrimRight(sets.Duration, "+"))
 
 	//支援者ごとの支払い情報から入力条件を満たす支援者を判定
@@ -234,7 +235,7 @@ func main() {
 							userResultMap[iUser] = false
 						}
 					} else {
-						if counter%durationTime == 0 {
+						if counter > 0 && counter%durationTime == 0 {
 							userResultMap[iUser] = true
 						} else {
 							userResultMap[iUser] = false
@@ -259,7 +260,7 @@ func main() {
 
 				}
 			} else {
-				if counter%durationTime == 0 {
+				if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
 					userResultMap[iUser] = true
 
 				} else {
