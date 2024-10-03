@@ -1,18 +1,21 @@
 @echo off
 cd /d %~dp0
-echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Jï¿½nï¿½ï¿½ï¿½Ü‚ï¿½
+echo ˆ—‚ğŠJn‚µ‚Ü‚·
 
-rem chocolateyï¿½ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½Wgetï¿½Æ‚ï¿½ï¿½í‚¹ï¿½ÄƒCï¿½ï¿½ï¿½Xï¿½gï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
+rem chocolatey‚ª‚È‚¯‚ê‚ÎWget‚Æ‚ ‚í‚¹‚ÄƒCƒ“ƒXƒg[ƒ‹‚·‚é
 where /q choco
-if %errorlevel% == 0 ( :: ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½İ‚ï¿½ï¿½ï¿½ï¿½
+if %errorlevel% == 0 ( :: ƒRƒ}ƒ“ƒh‚ª‘¶İ‚·‚ê‚Î
     echo choco exists
-) else (               :: ï¿½Rï¿½}ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½İ‚ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½
+) else (               :: ƒRƒ}ƒ“ƒh‚ª‘¶İ‚µ‚È‚¯‚ê‚Î
      Y |"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
      Y |choco install Wget
 )
 
-rem Chromeï¿½Ìƒoï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mï¿½Fï¿½ï¿½ï¿½ÄAï¿½ï¿½ï¿½ï¿½ï¿½oï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ChromeDriverï¿½ï¿½ï¿½_ï¿½Eï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½h
+
+rem Chrome‚Ìƒo[ƒWƒ‡ƒ“‚ğŠm”F‚µ‚ÄA“¯‚¶ƒo[ƒWƒ‡ƒ“‚ÌChromeDriver‚ğƒ_ƒEƒ“ƒ[ƒh
 echo webdriver download
+
 
 rem set version=dir /B /AD "C:\Program Files\Google\Chrome\Application"
 set versionPath="C:\Program Files\Google\Chrome\Application"
@@ -22,7 +25,8 @@ echo version is %version%
 set url=https://storage.googleapis.com/chrome-for-testing-public/%version%/win64/chromedriver-win64.zip
 wget %url%
 
-rem ï¿½_ï¿½Eï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½zipï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
+rem ƒ_ƒEƒ“ƒ[ƒh‚µ‚½zipƒtƒ@ƒCƒ‹‚ğ‰ğ“€
 echo unzip download file
 set zipFilePath=.\chromedriver-win64.zip
 set destFolderPath=.\output
@@ -30,7 +34,8 @@ set destFolderPath=.\output
 set psCommand=powershell -NoProfile -ExecutionPolicy Unrestricted Expand-Archive -Path %zipFilePath% -DestinationPath %destFolderPath% -Force
 %psCommand%
 
-rem C:\ProgramDataï¿½È‰ï¿½ï¿½ï¿½scrapingFanboxï¿½tï¿½Hï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½ï¿½ï¿½AChromeDriverï¿½ï¿½ï¿½Rï¿½sï¿½[
+
+rem C:\ProgramDataˆÈ‰º‚ÉscrapingFanboxƒtƒHƒ‹ƒ_‚ğì‚èAChromeDriver‚ğƒRƒs[
 echo webdriver move stanby
 
 set outPutPath=C:\ProgramData\scrapingFanbox
@@ -40,12 +45,13 @@ echo webdriver move
 
 copy /Y %destFolderPath%\chromedriver-win64\chromedriver.exe %outPutPath%
 
-rem zipï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½outputï¿½tï¿½Hï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½íœ
+
+rem zipƒtƒ@ƒCƒ‹‚ÆoutputƒtƒHƒ‹ƒ_‚ğíœ
 del /q chromedriver-win64.zip
 rmdir /q /s output
 
 
-rem C:\ProgramData\scrapingFanboxï¿½ï¿½PATHï¿½ï¿½Ê‚ï¿½
+rem C:\ProgramData\scrapingFanbox‚ÉPATH‚ğ’Ê‚·
 echo %PATH% | findstr "C:\ProgramData\scrapingFanbox" >NUL
 if not ERRORLEVEL==1 (
     echo PATH has been set
@@ -53,10 +59,10 @@ if not ERRORLEVEL==1 (
     set PATH=%PATH%;C:\ProgramData\scrapingFanbox
 )
 
-rem scrapingFanbox.exeï¿½ï¿½ï¿½Nï¿½ï¿½
+
+rem scrapingFanbox.exe‚ğ‹N“®
 echo scrapingFanbox boot
 call .\exe\scrapingFanbox.exe
 
-echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½
+echo ˆ—‚ªI—¹‚µ‚Ü‚µ‚½
 pause
-
