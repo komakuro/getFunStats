@@ -107,8 +107,6 @@ func main() {
 	fmt.Println("fillCount", fillCount)
 
 	for i := 0; i < fillCount; i++ {
-		fmt.Println(fillForm.At(i).Text())
-
 		if i == 0 {
 			fillForm.At(i).Fill(sets.LoginId)
 		}
@@ -281,15 +279,10 @@ func main() {
 	}
 
 	var outputSheetName string = "リスト"
-	var tmpSheetName string = "テンプレートリスト"
-	tmpSheetIndex, _ := f.GetSheetIndex(tmpSheetName)
 
-	//リストの情報をクリアする代わりに一度リストシートを削除してテンプレートリストをコピーする
+	//リストの情報をクリアする代わりに一度リストシートを削除して新たにリストを作作成する
 	f.DeleteSheet(outputSheetName)
 	f.NewSheet(outputSheetName)
-	outputSheetIndex, _ := f.GetSheetIndex(outputSheetName)
-	f.CopySheet(tmpSheetIndex, outputSheetIndex)
-	//f.MoveSheet(outputSheetName, "設定")
 
 	var userColoumId int = 2
 	var resultColoumId int = 3
