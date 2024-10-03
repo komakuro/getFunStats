@@ -121,7 +121,7 @@ func main() {
 
 	loginSubmit.Submit()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	//支援者一覧を取得
 	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
