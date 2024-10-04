@@ -258,7 +258,7 @@ func main() {
 		//ここら辺ちょっと細かく調べる↓
 		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
-			payAmountInt, _ := iPaySeqMap[yearMonth]
+			payAmountInt := iPaySeqMap[yearMonth]
 
 			if sets.Condition == "連続" {
 
