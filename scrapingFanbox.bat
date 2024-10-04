@@ -8,10 +8,16 @@ where /q choco
 if %errorlevel% == 0 ( :: コマンドが存在すれば
     echo choco exists
 ) else (               :: コマンドが存在しなければ
-     Y |"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-     Y |choco install Wget
+	echo Y|"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+    echo Y|choco install Wget
 )
 
+where /q wget
+if %errorlevel% == 0 ( :: コマンドが存在すれば
+    echo wget exists
+) else (               :: コマンドが存在しなければ
+	echo Y|choco install Wget
+)
 
 rem Chromeのバージョンを確認して、同じバージョンのChromeDriverをダウンロード
 echo webdriver download
