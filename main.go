@@ -315,23 +315,21 @@ func main() {
 			}
 		}
 
-		if sets.Condition == "累積" {
-			if strings.HasSuffix(sets.Duration, "+") {
-				if counter >= durationTime {
-					userResultMap[iUser] = true
+		if strings.HasSuffix(sets.Duration, "+") {
+			if counter >= durationTime {
+				userResultMap[iUser] = true
 
-				} else {
-					userResultMap[iUser] = false
-
-				}
 			} else {
-				if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
-					userResultMap[iUser] = true
+				userResultMap[iUser] = false
 
-				} else {
-					userResultMap[iUser] = false
+			}
+		} else {
+			if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
+				userResultMap[iUser] = true
 
-				}
+			} else {
+				userResultMap[iUser] = false
+
 			}
 		}
 	}
