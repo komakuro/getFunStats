@@ -258,7 +258,7 @@ func main() {
 		//ここら辺ちょっと細かく調べる↓
 		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
-			payAmountInt, _ := iPaySeqMap[yearMonth]
+			payAmountInt := iPaySeqMap[yearMonth]
 
 			if sets.Condition == "連続" {
 
@@ -354,12 +354,13 @@ func main() {
 	var userColoumId int = 2
 	var resultColoumId int = 3
 	var userRowId int = 3
-	var yearMonthColoumId int = 4
 	var yearMonthRowId int = 2
 	var firstIter bool = true
 
 	//判定した情報をExcelに出力していく
 	for iUser, iPaySeqMap := range userPaySeqMap {
+
+		var yearMonthColoumId int = 4
 
 		userTitleCell, _ := excelize.CoordinatesToCellName(userColoumId, yearMonthRowId)
 		resultTitleCell, _ := excelize.CoordinatesToCellName(resultColoumId, yearMonthRowId)
