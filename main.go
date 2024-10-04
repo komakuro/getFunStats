@@ -34,8 +34,8 @@ type payStats struct {
 }
 
 type config struct {
-	loginWaitTime    int
-	infoLoadWaitTime int
+	LoginWaitTime    int `json:"loginWaitTime"`
+	InfoLoadWaitTime int `json:"infoLoadWaitTime"`
 }
 
 func readCell(f *excelize.File, sheetName string, cellPosition string) string {
@@ -57,11 +57,7 @@ func loadConfig() config {
 	var cfg config
 	_ = json.NewDecoder(f).Decode(&cfg)
 
-	fmt.Println(cfg)
-
-	cfg.loginWaitTime = 3
-	cfg.infoLoadWaitTime = 1
-
+	//fmt.Println(cfg)
 	return cfg
 }
 
@@ -158,7 +154,7 @@ func main() {
 
 	loginSubmit.Submit()
 
-	time.Sleep(time.Duration(cfgs.loginWaitTime) * time.Second)
+	time.Sleep(time.Duration(cfgs.LoginWaitTime) * time.Second)
 
 	//支援者一覧を取得
 	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
@@ -205,7 +201,7 @@ func main() {
 
 		}
 
-		time.Sleep(time.Duration(cfgs.infoLoadWaitTime) * time.Second)
+		time.Sleep(time.Duration(cfgs.InfoLoadWaitTime) * time.Second)
 
 		page.Back()
 
