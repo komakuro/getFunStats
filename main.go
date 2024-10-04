@@ -18,6 +18,7 @@ type settings struct {
 	CreatorId string
 	LoginId   string
 	Password  string
+	pcUser    string
 	Duration  string
 	Amount    string
 	Condition string
@@ -55,10 +56,11 @@ func loadConfig() settings {
 	cfg.CreatorId = readCell(f, "設定", "C6")
 	cfg.LoginId = readCell(f, "設定", "C4")
 	cfg.Password = readCell(f, "設定", "C5")
-	cfg.Duration = readCell(f, "設定", "C10")
-	cfg.Amount = readCell(f, "設定", "C11")
-	cfg.Condition = readCell(f, "設定", "C12")
-	cfg.GetMonth = readCell(f, "設定", "C13")
+	cfg.pcUser = readCell(f, "設定", "C7")
+	cfg.Duration = readCell(f, "設定", "C11")
+	cfg.Amount = readCell(f, "設定", "C12")
+	cfg.Condition = readCell(f, "設定", "C13")
+	cfg.GetMonth = readCell(f, "設定", "C14")
 
 	return cfg
 }
@@ -98,7 +100,15 @@ func main() {
 	defer driver.Stop() // chromeを終了
 
 	//支援者一覧ページを開く
-	page, _ := driver.NewPage()
+	page, _ := driver.NewPage(
+		agouti.Desired(agouti.Capabilities{
+			"chromeOptions": map[string][]string{
+				"args": []string{
+					"user-data-dir=C:\\Users\\" + sets.pcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default",
+				},
+			},
+		}),
+	)
 	page.Navigate("https://" + sets.CreatorId + ".fanbox.cc/manage/relationships")
 
 	//ログインを行う
