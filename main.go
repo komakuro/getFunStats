@@ -325,6 +325,7 @@ func main() {
 	//リストの情報をクリアする代わりに一度リストシートを削除して新たにリストを作作成する
 	f.DeleteSheet(outputSheetName)
 	f.NewSheet(outputSheetName)
+	f.SetColWidth(outputSheetName, "B", "B", 18)
 
 	var userColoumId int = 2
 	var resultColoumId int = 3
@@ -345,6 +346,12 @@ func main() {
 
 		if userResultMap[iUser] {
 			f.SetCellValue(outputSheetName, resultCell, "対象")
+
+			style, _ := f.NewStyle(&excelize.Style{
+				Fill: excelize.Fill{Type: "pattern", Color: []string{"F4E511"}, Pattern: 1},
+			})
+
+			f.SetCellStyle(outputSheetName, resultCell, resultCell, style)
 		}
 
 		m, _ := strconv.Atoi(sets.GetMonth)
