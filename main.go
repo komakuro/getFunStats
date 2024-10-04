@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -32,6 +33,11 @@ type payStats struct {
 	PayAmount string
 }
 
+type config struct {
+	loginWaitTime    int
+	infoLoadWaitTime int
+}
+
 func readCell(f *excelize.File, sheetName string, cellPosition string) string {
 	ret, err := f.GetCellValue(sheetName, cellPosition)
 	if err != nil {
@@ -41,7 +47,25 @@ func readCell(f *excelize.File, sheetName string, cellPosition string) string {
 	return ret
 }
 
-func loadConfig() settings {
+func loadConfig() config {
+	f, err := os.Open("./exe/settings.json")
+	if err != nil {
+		panic("loadconfig os.Open err:" + err.Error())
+	}
+	defer f.Close()
+
+	var cfg config
+	_ = json.NewDecoder(f).Decode(&cfg)
+
+	fmt.Println(cfg)
+
+	cfg.loginWaitTime = 3
+	cfg.infoLoadWaitTime = 1
+
+	return cfg
+}
+
+func loadSettings() settings {
 
 	//フォーマットを開く
 	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
@@ -50,19 +74,19 @@ func loadConfig() settings {
 	}
 	defer f.Close()
 
-	var cfg settings
+	var stg settings
 
 	//フォーマット内の指定されたセルの値を取得
-	cfg.CreatorId = readCell(f, "設定", "C6")
-	cfg.LoginId = readCell(f, "設定", "C4")
-	cfg.Password = readCell(f, "設定", "C5")
-	cfg.pcUser = readCell(f, "設定", "C7")
-	cfg.Duration = readCell(f, "設定", "C11")
-	cfg.Amount = readCell(f, "設定", "C12")
-	cfg.Condition = readCell(f, "設定", "C13")
-	cfg.GetMonth = readCell(f, "設定", "C14")
+	stg.CreatorId = readCell(f, "設定", "C6")
+	stg.LoginId = readCell(f, "設定", "C4")
+	stg.Password = readCell(f, "設定", "C5")
+	stg.pcUser = readCell(f, "設定", "C7")
+	stg.Duration = readCell(f, "設定", "C11")
+	stg.Amount = readCell(f, "設定", "C12")
+	stg.Condition = readCell(f, "設定", "C13")
+	stg.GetMonth = readCell(f, "設定", "C14")
 
-	return cfg
+	return stg
 }
 
 func ItoS(screenshotNum *int) string {
@@ -92,7 +116,10 @@ func WriteFile(f *os.File, writeString string) {
 
 func main() {
 	//設定の取得
-	sets := loadConfig()
+	sets := loadSettings()
+
+	//パラメータ設定の取得
+	cfgs := loadConfig()
 
 	// chromeを起動
 	driver := agouti.ChromeDriver()
@@ -131,7 +158,7 @@ func main() {
 
 	loginSubmit.Submit()
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(time.Duration(cfgs.loginWaitTime) * time.Second)
 
 	//支援者一覧を取得
 	supportUsers := page.AllByClass("Row__UserWrapper-sc-1xb9lq9-1")
@@ -178,7 +205,7 @@ func main() {
 
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(cfgs.infoLoadWaitTime) * time.Second)
 
 		page.Back()
 
