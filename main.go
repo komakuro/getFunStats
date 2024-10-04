@@ -345,9 +345,18 @@ func main() {
 	var outputSheetName string = "リスト"
 
 	//リストの情報をクリアする代わりに一度リストシートを削除して新たにリストを作作成する
-	f.DeleteSheet(outputSheetName)
-	f.NewSheet(outputSheetName)
-	f.SetColWidth(outputSheetName, "B", "B", 18)
+	err = f.DeleteSheet(outputSheetName)
+	if err != nil {
+		panic("loadConfig excelize.DeleteSheet err:" + err.Error())
+	}
+	_, err = f.NewSheet(outputSheetName)
+	if err != nil {
+		panic("loadConfig excelize.NewSheet err:" + err.Error())
+	}
+	err = f.SetColWidth(outputSheetName, "B", "B", 18)
+	if err != nil {
+		panic("loadConfig excelize.SetColWidth err:" + err.Error())
+	}
 
 	var userColoumId int = 2
 	var resultColoumId int = 3
@@ -403,8 +412,14 @@ func main() {
 		firstIter = false
 
 	}
-	f.Save()
-	f.Close()
+	err = f.Save()
+	if err != nil {
+		panic("loadConfig excelize.Save err:" + err.Error())
+	}
+	err = f.Close()
+	if err != nil {
+		panic("loadConfig excelize.Close err:" + err.Error())
+	}
 
 }
 
