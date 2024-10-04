@@ -245,7 +245,6 @@ func main() {
 
 	fmt.Println(userPaySeqMap)
 
-	var counter int = 0
 	var userResultMap = make(map[string]bool)
 	var checkTime = time.Now()
 	var checkMonth = GetYearMonthFromTime(checkTime)
@@ -254,7 +253,9 @@ func main() {
 
 	//支援者ごとの支払い情報から入力条件を満たす支援者を判定
 	for iUser, iPaySeqMap := range userPaySeqMap {
+		var counter int = 0
 		m, _ := strconv.Atoi(sets.GetMonth)
+
 		//ここら辺ちょっと細かく調べる↓
 		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
