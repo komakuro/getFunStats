@@ -33,6 +33,7 @@ type payStats struct {
 	PayAmount string
 }
 
+// 外部パラメータの構造体
 type config struct {
 	LoginWaitTime    int `json:"loginWaitTime"`
 	InfoLoadWaitTime int `json:"infoLoadWaitTime"`
@@ -191,7 +192,7 @@ func main() {
 			}
 
 			if j%2 == 1 {
-				oneLine.PayAmount = txt
+				oneLine.PayAmount = strings.ReplaceAll(txt, "\u00A5", "")
 				//一行分の情報を取り終わったので、取得した支援者名、支払い日時、支払金額をスライスに格納
 				payStatsList = append(payStatsList, oneLine)
 				//次の一行の情報の取得処理を開始するにあたって、oneLineを初期化する
@@ -208,13 +209,13 @@ func main() {
 	}
 
 	//スライスの情報を整理するためのマップを作成
-	var userPaySeqMap map[string]map[string]string = make(map[string]map[string]string)
+	var userPaySeqMap = make(map[string]map[string]int)
 
 	//スライスに格納された内容の数だけマップに情報を格納
 	for i := 0; i < len(payStatsList); i++ {
 
 		var tmpPayUser string = payStatsList[i].UserName
-		var tmpPaySeqMap map[string]string = make(map[string]string)
+		var tmpPaySeqMap = make(map[string]int)
 
 		//マップ内に該当の支援者名が存在するか確認し、存在しなければ格納用のマップを作成
 		if _, ok := userPaySeqMap[tmpPayUser]; ok {
@@ -225,17 +226,17 @@ func main() {
 		tmpPayDate = tmpPayDate[:7]
 
 		var tmpPayAmount string = payStatsList[i].PayAmount
-		var tmpPayAmountInt, _ = strconv.Atoi(strings.ReplaceAll(tmpPayAmount, "\u00A5", ""))
-		var tmpPayAmountInt2, _ = strconv.Atoi(strings.ReplaceAll(tmpPaySeqMap[tmpPayDate], "\u00A5", ""))
+		var tmpPayAmountInt, _ = strconv.Atoi(tmpPayAmount)
+		var tmpPayAmountInt2, _ = tmpPaySeqMap[tmpPayDate]
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
 		if _, ok := tmpPaySeqMap[tmpPayDate]; ok {
 			var AmountSum int = tmpPayAmountInt2 + tmpPayAmountInt
-			var AmountSumStr string = strconv.Itoa(AmountSum)
-			tmpPaySeqMap[tmpPayDate] = "\u00A5" + AmountSumStr
+			//var AmountSumStr string = strconv.Itoa(AmountSum)
+			tmpPaySeqMap[tmpPayDate] = AmountSum
 
 		} else {
-			tmpPaySeqMap[tmpPayDate] = tmpPayAmount
+			tmpPaySeqMap[tmpPayDate] = tmpPayAmountInt
 
 		}
 
@@ -257,7 +258,7 @@ func main() {
 		//ここら辺ちょっと細かく調べる↓
 		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
-			payAmountInt, _ := strconv.Atoi(strings.ReplaceAll(iPaySeqMap[yearMonth], "\u00A5", ""))
+			payAmountInt, _ := iPaySeqMap[yearMonth]
 
 			if sets.Condition == "連続" {
 
