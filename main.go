@@ -354,12 +354,13 @@ func main() {
 	var userColoumId int = 2
 	var resultColoumId int = 3
 	var userRowId int = 3
-	var yearMonthColoumId int = 4
 	var yearMonthRowId int = 2
 	var firstIter bool = true
 
 	//判定した情報をExcelに出力していく
 	for iUser, iPaySeqMap := range userPaySeqMap {
+
+		var yearMonthColoumId int = 4
 
 		userTitleCell, _ := excelize.CoordinatesToCellName(userColoumId, yearMonthRowId)
 		resultTitleCell, _ := excelize.CoordinatesToCellName(resultColoumId, yearMonthRowId)
