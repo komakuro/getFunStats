@@ -126,7 +126,7 @@ func main() {
 	page, _ := driver.NewPage(
 		agouti.Desired(agouti.Capabilities{
 			"chromeOptions": map[string][]string{
-				"args": []string{
+				"args": {
 					"user-data-dir=C:\\Users\\" + sets.pcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default",
 				},
 			},
