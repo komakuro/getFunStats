@@ -118,17 +118,28 @@ func main() {
 	//パラメータ設定の取得
 	cfgs := loadConfig()
 
+	//エラー出力用の定義
+	var errorCount = 0
+	var errorTxt string
+
 	// chromeを起動
 	driver := agouti.ChromeDriver()
 	driver.Start()
 	defer driver.Stop() // chromeを終了
+
+	//Cookieの格納されたディレクトリが存在するか確認
+	cookieDir := "C:\\Users\\" + sets.pcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+	if f, err := os.Stat(cookieDir); os.IsNotExist(err) || !f.IsDir() {
+		errorCount = errorCount + 1
+		errorTxt = errorTxt + "指定のフォルダが見つかりません\nPCユーザー名が正しいか確認してください\n"
+	}
 
 	//支援者一覧ページを開く
 	page, _ := driver.NewPage(
 		agouti.Desired(agouti.Capabilities{
 			"chromeOptions": map[string][]string{
 				"args": {
-					"user-data-dir=C:\\Users\\" + sets.pcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default",
+					"user-data-dir=" + cookieDir,
 				},
 			},
 		}),
@@ -139,6 +150,11 @@ func main() {
 	fillForm := page.AllByClass("sc-bn9ph6-6")
 	fillCount, _ := fillForm.Count()
 	//fmt.Println("fillCount", fillCount)
+
+	if fillCount != 0 {
+		errorCount = errorCount + 1
+		errorTxt = errorTxt + "支援者一覧ページにアクセスできません\nクリエイターID、ログインアドレス、ログインパスワードが正しいか確認してください\n確認コードの入力やreCapcha認証を求められた場合は\n一度GoogleChromeでFANBOXにログインをした上でもう一度実行してください\n"
+	}
 
 	for i := 0; i < fillCount; i++ {
 		if i == 0 {
@@ -415,11 +431,24 @@ func main() {
 	}
 	err = f.Save()
 	if err != nil {
-		panic("loadConfig excelize.Save err:" + err.Error())
+		//panic("loadConfig excelize.Save err:" + err.Error())
+		errorCount = errorCount + 1
+		errorTxt = errorTxt + "出力情報を書き込めません\n入出力フォーマット.xlsxを閉じてからもう一度実行してください\n"
 	}
 	err = f.Close()
 	if err != nil {
 		panic("loadConfig excelize.Close err:" + err.Error())
+	}
+
+	//エラーがどこかで発生していた場合はエラー内容をログ出力する
+	if errorCount == 0 {
+		fmt.Println("出力に成功しました")
+
+	} else {
+		var logFile = GetFile("ErrorLog.txt")
+		WriteFile(logFile, errorTxt)
+
+		fmt.Println("出力に失敗しました、詳細はErrorLog.txtを確認してください")
 	}
 
 }
