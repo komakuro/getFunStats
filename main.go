@@ -16,14 +16,15 @@ import (
 
 // 設定情報の構造体
 type settings struct {
-	CreatorId string
-	LoginId   string
-	Password  string
-	pcUser    string
-	Duration  string
-	Amount    string
-	Condition string
-	GetMonth  string
+	CreatorId  string
+	LoginId    string
+	Password   string
+	pcUser     string
+	Duration   string
+	Amount     string
+	Condition  string
+	GetMonth   string
+	choiceFlag string
 }
 
 // 支援者情報の構造体
@@ -82,6 +83,7 @@ func loadSettings() settings {
 	stg.Amount = readCell(f, "設定", "C12")
 	stg.Condition = readCell(f, "設定", "C13")
 	stg.GetMonth = readCell(f, "設定", "C14")
+	stg.choiceFlag = readCell(f, "設定", "C15")
 
 	return stg
 }
@@ -272,7 +274,7 @@ func main() {
 		var counter int = 0
 		m, _ := strconv.Atoi(sets.GetMonth)
 
-		//ここら辺ちょっと細かく調べる↓
+		//現在の実行年月を基準として、ひと月ずつ取得月数分さかのぼっていく
 		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
 			payAmountInt := iPaySeqMap[yearMonth]
@@ -285,6 +287,12 @@ func main() {
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
 							if counter >= durationTime {
+								userResultMap[iUser] = true
+							} else {
+								userResultMap[iUser] = false
+							}
+						} else if sets.choiceFlag == "含める" {
+							if counter/durationTime > 0 {
 								userResultMap[iUser] = true
 							} else {
 								userResultMap[iUser] = false
@@ -304,6 +312,12 @@ func main() {
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
 							if counter >= durationTime {
+								userResultMap[iUser] = true
+							} else {
+								userResultMap[iUser] = false
+							}
+						} else if sets.choiceFlag == "含める" {
+							if counter/durationTime > 0 {
 								userResultMap[iUser] = true
 							} else {
 								userResultMap[iUser] = false
@@ -339,6 +353,12 @@ func main() {
 			} else {
 				userResultMap[iUser] = false
 
+			}
+		} else if sets.choiceFlag == "含める" {
+			if counter/durationTime > 0 {
+				userResultMap[iUser] = true
+			} else {
+				userResultMap[iUser] = false
 			}
 		} else {
 			if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
