@@ -226,6 +226,8 @@ func main() {
 
 	}
 
+	fmt.Println(payStatsList)
+
 	//スライスの情報を整理するためのマップを作成
 	var userPaySeqMap = make(map[string]map[string]int)
 
@@ -263,9 +265,9 @@ func main() {
 
 	fmt.Println(userPaySeqMap)
 
-	var userResultMap = make(map[string]bool)
-	var checkTime = time.Now()
-	var checkMonth = GetYearMonthFromTime(checkTime)
+	userResultMap := make(map[string]bool)
+	checkTime := time.Now()
+	checkMonth := GetYearMonthFromTime(checkTime)
 	durationTime, _ := strconv.Atoi(strings.ReplaceAll(sets.Duration, "+", ""))
 	amountInt, _ := strconv.Atoi(strings.ReplaceAll(sets.Amount, "+", ""))
 
