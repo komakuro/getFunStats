@@ -288,8 +288,12 @@ func main() {
 						counter = counter + 1
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
-							if counter >= durationTime {
-								userResultMap[iUser] = true
+							if sets.choiceFlag == "含める" {
+								if counter >= durationTime {
+									userResultMap[iUser] = true
+								} else {
+									userResultMap[iUser] = false
+								}
 							} else {
 								userResultMap[iUser] = false
 							}
@@ -300,7 +304,7 @@ func main() {
 								userResultMap[iUser] = false
 							}
 						} else {
-							if counter > 0 && counter%durationTime == 0 {
+							if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
 								userResultMap[iUser] = true
 							} else {
 								userResultMap[iUser] = false
@@ -313,8 +317,12 @@ func main() {
 						counter = counter + 1
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
-							if counter >= durationTime {
-								userResultMap[iUser] = true
+							if sets.choiceFlag == "含める" {
+								if counter >= durationTime {
+									userResultMap[iUser] = true
+								} else {
+									userResultMap[iUser] = false
+								}
 							} else {
 								userResultMap[iUser] = false
 							}
@@ -325,7 +333,7 @@ func main() {
 								userResultMap[iUser] = false
 							}
 						} else {
-							if counter > 0 && counter%durationTime == 0 {
+							if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
 								userResultMap[iUser] = true
 							} else {
 								userResultMap[iUser] = false
@@ -334,7 +342,6 @@ func main() {
 						break
 					}
 				}
-
 			} else if sets.Condition == "累積" {
 				if strings.HasSuffix(sets.Amount, "+") {
 					if payAmountInt >= amountInt {
@@ -351,24 +358,14 @@ func main() {
 		if strings.HasSuffix(sets.Duration, "+") {
 			if counter >= durationTime {
 				userResultMap[iUser] = true
-
-			} else {
-				userResultMap[iUser] = false
-
-			}
-		} else if sets.choiceFlag == "含める" {
-			if counter/durationTime > 0 {
-				userResultMap[iUser] = true
 			} else {
 				userResultMap[iUser] = false
 			}
 		} else {
-			if _, ok := iPaySeqMap[checkMonth]; ok && counter > 0 && counter%durationTime == 0 {
+			if counter > 0 && counter%durationTime == 0 {
 				userResultMap[iUser] = true
-
 			} else {
 				userResultMap[iUser] = false
-
 			}
 		}
 	}
