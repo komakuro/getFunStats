@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/widget"
+
 	"github.com/sclevine/agouti"
 
 	"github.com/xuri/excelize/v2"
@@ -123,6 +126,18 @@ func main() {
 	//エラー出力用の定義
 	var errorCount = 0
 	var errorTxt string
+
+	a := app.New()
+
+	w := a.NewWindow("Hello")
+	w.SetContent(widget.NewVBox(
+		widget.NewLabel("Hello Fyne!"),
+		widget.NewButton("Quit", func() {
+			a.Quit()
+		}),
+	))
+
+	w.ShowAndRun()
 
 	// chromeを起動
 	driver := agouti.ChromeDriver()
