@@ -12,7 +12,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/sclevine/agouti"
@@ -119,6 +118,11 @@ func WriteFile(f *os.File, writeString string) {
 	}
 }
 
+func UpdateTime(clock *widget.Label) {
+	formatted := time.Now().Format("Time: 03:04:05")
+	clock.SetText(formatted)
+}
+
 func main() {
 	//設定の取得
 	sets := loadSettings()
@@ -131,10 +135,85 @@ func main() {
 	var errorTxt string
 
 	app := app.New()
-	win := app.NewWindow("Button")
-	button := widget.NewButton("Quit", func() { app.Quit() })
-	win.SetContent(container.New(layout.NewCenterLayout(), button))
-	win.Resize(fyne.NewSize(400, 200))
+	app.Settings().SetTheme(&myTheme{})
+	win := app.NewWindow("scrapingFANBOX")
+
+	initText := widget.NewLabel("初期設定")
+	initText.TextStyle.Bold = true
+
+	entry1 := widget.NewEntry()
+	entry2 := widget.NewEntry()
+	entry3 := widget.NewEntry()
+	entry4 := widget.NewEntry()
+
+	initForm := &widget.Form{
+		Items: []*widget.FormItem{ // we can specify items in the constructor
+			{Text: "メールアドレス", Widget: entry1},
+			{Text: "パスワード", Widget: entry2},
+			{Text: "クリエイターID", Widget: entry3},
+			{Text: "PCユーザー名", Widget: entry4},
+		},
+	}
+
+	setText := widget.NewLabel("継続条件設定")
+	setText.TextStyle.Bold = true
+
+	entry5 := widget.NewEntry()
+
+	setForm1 := &widget.Form{
+		Items: []*widget.FormItem{ // we can specify items in the constructor
+			{Text: "　　　継続期間", Widget: entry5},
+		},
+	}
+
+	radioText := widget.NewLabel("　継続可能条件")
+	radioText.TextStyle.Bold = true
+
+	setRadio := widget.NewRadioGroup([]string{"連続", "累計"}, func(value string) {
+		log.Println("Radio set to", value)
+	})
+
+	entry6 := widget.NewEntry()
+	entry7 := widget.NewEntry()
+	entry8 := widget.NewEntry()
+
+	setForm2 := &widget.Form{
+		Items: []*widget.FormItem{ // we can specify items in the constructor
+			{Text: "継続プラン金額", Widget: entry6},
+			{Text: "継続可能条件", Widget: entry7},
+			{Text: "取得月数", Widget: entry8},
+		},
+	}
+
+	checkText := widget.NewLabel("過去の達成対象者を含めるか")
+	checkText.TextStyle.Bold = true
+
+	setCheck := widget.NewRadioGroup([]string{"含めない", "含める"}, func(value string) {
+		log.Println("Check set to", value)
+	})
+
+	saveButton := widget.NewButton("保存", func() { app.Quit() })
+	bootButton := widget.NewButton("実行", func() { app.Quit() })
+
+	win.SetContent(container.NewVBox(
+		initText,
+		initForm,
+		setText,
+		setForm1,
+		container.NewHBox(
+			radioText,
+			setRadio,
+		),
+		setForm2,
+		container.NewHBox(
+			checkText,
+			setCheck,
+		),
+		saveButton,
+		bootButton,
+	))
+
+	win.Resize(fyne.NewSize(600, 400))
 	win.CenterOnScreen()
 	win.ShowAndRun()
 
