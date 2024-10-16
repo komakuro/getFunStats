@@ -9,7 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/sclevine/agouti"
@@ -127,17 +130,13 @@ func main() {
 	var errorCount = 0
 	var errorTxt string
 
-	a := app.New()
-
-	w := a.NewWindow("Hello")
-	w.SetContent(widget.NewVBox(
-		widget.NewLabel("Hello Fyne!"),
-		widget.NewButton("Quit", func() {
-			a.Quit()
-		}),
-	))
-
-	w.ShowAndRun()
+	app := app.New()
+	win := app.NewWindow("Button")
+	button := widget.NewButton("Quit", func() { app.Quit() })
+	win.SetContent(container.New(layout.NewCenterLayout(), button))
+	win.Resize(fyne.NewSize(400, 200))
+	win.CenterOnScreen()
+	win.ShowAndRun()
 
 	// chromeを起動
 	driver := agouti.ChromeDriver()
