@@ -21,15 +21,15 @@ import (
 
 // 設定情報の構造体
 type settings struct {
-	CreatorId  string
 	LoginId    string
 	Password   string
-	pcUser     string
+	CreatorId  string
+	PcUser     string
 	Duration   string
 	Amount     string
 	Condition  string
 	GetMonth   string
-	choiceFlag string
+	ChoiceFlag string
 }
 
 // 支援者情報の構造体
@@ -45,7 +45,7 @@ type config struct {
 	InfoLoadWaitTime int `json:"infoLoadWaitTime"`
 }
 
-func readCell(f *excelize.File, sheetName string, cellPosition string) string {
+func ReadCell(f *excelize.File, sheetName string, cellPosition string) string {
 	ret, err := f.GetCellValue(sheetName, cellPosition)
 	if err != nil {
 		panic("readCell err:" + err.Error())
@@ -68,7 +68,21 @@ func loadConfig() config {
 	return cfg
 }
 
-func loadSettings() settings {
+func loadJson() settings {
+	f, err := os.Open("./save.json")
+	if err != nil {
+		panic("loadconfig os.Open err:" + err.Error())
+	}
+	defer f.Close()
+
+	var stg settings
+	_ = json.NewDecoder(f).Decode(&stg)
+
+	//fmt.Println(cfg)
+	return stg
+}
+
+func LoadSettings() settings {
 
 	//フォーマットを開く
 	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
@@ -80,15 +94,15 @@ func loadSettings() settings {
 	var stg settings
 
 	//フォーマット内の指定されたセルの値を取得
-	stg.CreatorId = readCell(f, "設定", "C6")
-	stg.LoginId = readCell(f, "設定", "C4")
-	stg.Password = readCell(f, "設定", "C5")
-	stg.pcUser = readCell(f, "設定", "C7")
-	stg.Duration = readCell(f, "設定", "C11")
-	stg.Amount = readCell(f, "設定", "C12")
-	stg.Condition = readCell(f, "設定", "C13")
-	stg.GetMonth = readCell(f, "設定", "C14")
-	stg.choiceFlag = readCell(f, "設定", "C15")
+	stg.CreatorId = ReadCell(f, "設定", "C6")
+	stg.LoginId = ReadCell(f, "設定", "C4")
+	stg.Password = ReadCell(f, "設定", "C5")
+	stg.PcUser = ReadCell(f, "設定", "C7")
+	stg.Duration = ReadCell(f, "設定", "C11")
+	stg.Amount = ReadCell(f, "設定", "C12")
+	stg.Condition = ReadCell(f, "設定", "C13")
+	stg.GetMonth = ReadCell(f, "設定", "C14")
+	stg.ChoiceFlag = ReadCell(f, "設定", "C15")
 
 	return stg
 }
@@ -125,10 +139,13 @@ func UpdateTime(clock *widget.Label) {
 
 func main() {
 	//設定の取得
-	sets := loadSettings()
+	//sets := loadSettings()
 
 	//パラメータ設定の取得
 	cfgs := loadConfig()
+
+	//保存情報の取得
+	sets := loadJson()
 
 	//エラー出力用の定義
 	var errorCount = 0
@@ -170,18 +187,16 @@ func main() {
 	radioText.TextStyle.Bold = true
 
 	setRadio := widget.NewRadioGroup([]string{"連続", "累計"}, func(value string) {
-		log.Println("Radio set to", value)
+		sets.Condition = value
 	})
 
 	entry6 := widget.NewEntry()
 	entry7 := widget.NewEntry()
-	entry8 := widget.NewEntry()
 
 	setForm2 := &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
 			{Text: "継続プラン金額", Widget: entry6},
-			{Text: "継続可能条件", Widget: entry7},
-			{Text: "取得月数", Widget: entry8},
+			{Text: "取得月数", Widget: entry7},
 		},
 	}
 
@@ -189,10 +204,36 @@ func main() {
 	checkText.TextStyle.Bold = true
 
 	setCheck := widget.NewRadioGroup([]string{"含めない", "含める"}, func(value string) {
-		log.Println("Check set to", value)
+		sets.ChoiceFlag = value
 	})
 
-	saveButton := widget.NewButton("保存", func() { app.Quit() })
+	saveButton := widget.NewButton("保存", func() {
+		saveSet := settings{
+			LoginId:    entry1.Text,
+			Password:   entry2.Text,
+			CreatorId:  entry3.Text,
+			PcUser:     entry4.Text,
+			Duration:   entry5.Text,
+			Amount:     entry6.Text,
+			Condition:  setRadio.Selected,
+			GetMonth:   entry7.Text,
+			ChoiceFlag: setCheck.Selected,
+		}
+
+		s, err := json.MarshalIndent(&saveSet, "", "\t")
+		if err != nil {
+			fmt.Println("Error marshalling to JSON:", err)
+			return
+		}
+
+		f, err := os.Create("save.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		f.Write(s)
+
+	})
 	bootButton := widget.NewButton("実行", func() { app.Quit() })
 
 	win.SetContent(container.NewVBox(
@@ -213,6 +254,19 @@ func main() {
 		bootButton,
 	))
 
+	//保存設定があればフォームに設定
+	if _, err := os.Stat("save.json"); err == nil {
+		entry1.SetText(sets.LoginId)
+		entry2.SetText(sets.Password)
+		entry3.SetText(sets.CreatorId)
+		entry4.SetText(sets.PcUser)
+		entry5.SetText(sets.Duration)
+		entry6.SetText(sets.Amount)
+		entry7.SetText(sets.GetMonth)
+		setRadio.SetSelected(sets.Condition)
+		setCheck.SetSelected(sets.ChoiceFlag)
+	}
+
 	win.Resize(fyne.NewSize(600, 400))
 	win.CenterOnScreen()
 	win.ShowAndRun()
@@ -223,7 +277,7 @@ func main() {
 	defer driver.Stop() // chromeを終了
 
 	//Cookieの格納されたディレクトリが存在するか確認
-	cookieDir := "C:\\Users\\" + sets.pcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+	cookieDir := "C:\\Users\\" + sets.PcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
 	if f, err := os.Stat(cookieDir); os.IsNotExist(err) || !f.IsDir() {
 		errorCount = errorCount + 1
 		errorTxt = errorTxt + "指定のフォルダが見つかりません\nPCユーザー名が正しいか確認してください\n"
@@ -381,7 +435,7 @@ func main() {
 						counter = counter + 1
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
-							if sets.choiceFlag == "含める" {
+							if sets.ChoiceFlag == "含める" {
 								if counter >= durationTime {
 									userResultMap[iUser] = true
 								} else {
@@ -390,7 +444,7 @@ func main() {
 							} else {
 								userResultMap[iUser] = false
 							}
-						} else if sets.choiceFlag == "含める" {
+						} else if sets.ChoiceFlag == "含める" {
 							if counter/durationTime > 0 {
 								userResultMap[iUser] = true
 							} else {
@@ -410,7 +464,7 @@ func main() {
 						counter = counter + 1
 					} else {
 						if strings.HasSuffix(sets.Duration, "+") {
-							if sets.choiceFlag == "含める" {
+							if sets.ChoiceFlag == "含める" {
 								if counter >= durationTime {
 									userResultMap[iUser] = true
 								} else {
@@ -419,7 +473,7 @@ func main() {
 							} else {
 								userResultMap[iUser] = false
 							}
-						} else if sets.choiceFlag == "含める" {
+						} else if sets.ChoiceFlag == "含める" {
 							if counter/durationTime > 0 {
 								userResultMap[iUser] = true
 							} else {
