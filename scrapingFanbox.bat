@@ -1,7 +1,5 @@
 @echo off
 cd /d %~dp0
-echo 処理を開始します
-
 
 rem chocolateyがなければWgetとあわせてインストールする
 where /q choco
@@ -64,11 +62,3 @@ if not ERRORLEVEL==1 (
 ) else (
     set PATH=%PATH%;C:\ProgramData\scrapingFanbox
 )
-
-
-rem scrapingFanbox.exeを起動
-echo scrapingFanbox boot
-call .\exe\scrapingFanbox.exe
-
-echo 処理が終了しました
-pause

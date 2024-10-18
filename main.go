@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,10 @@ type payStats struct {
 type config struct {
 	LoginWaitTime    int `json:"loginWaitTime"`
 	InfoLoadWaitTime int `json:"infoLoadWaitTime"`
+}
+
+type newWindow struct {
+	fyne.Window
 }
 
 func ReadCell(f *excelize.File, sheetName string, cellPosition string) string {
@@ -137,23 +142,165 @@ func UpdateTime(clock *widget.Label) {
 	clock.SetText(formatted)
 }
 
+func newhelpWindow(app fyne.App) *newWindow {
+
+	app.Settings().SetTheme(&myTheme{})
+	win := app.NewWindow("ヘルプ")
+
+	mailText := widget.NewLabel("メールアドレス")
+	mailText.TextStyle.Bold = true
+
+	mailExplain := widget.NewLabel("FANBOXにログインする際のメールアドレスを入力してください")
+
+	passText := widget.NewLabel("パスワード")
+	passText.TextStyle.Bold = true
+
+	passExplain := widget.NewLabel("FANBOXにログインする際のパスワードを入力してください")
+
+	creatorText := widget.NewLabel("クリエイターID")
+	creatorText.TextStyle.Bold = true
+
+	creaTorExplain := widget.NewLabel("FANBOXで設定しているクリエイターIDを入力してください")
+
+	pcUserText := widget.NewLabel("PCユーザー名")
+	pcUserText.TextStyle.Bold = true
+
+	pcUserExplain := widget.NewLabel("PCにログインしているユーザー名を入力してください\nC:\\Users\\XXXX\\Desktop のXXXXの部分を入力してください")
+
+	durationText := widget.NewLabel("継続期間")
+	durationText.TextStyle.Bold = true
+
+	durationExplain := widget.NewLabel("対象となるプランの継続期間を入力してください\n継続期間ごとなら「半角数字」、継続期間以上なら「半角数字+」と入力してください")
+
+	amountText := widget.NewLabel("継続プラン金額")
+	amountText.TextStyle.Bold = true
+
+	amountExplain := widget.NewLabel("対象となるプランの支援金額を入力してください\n指定金額だけが対象なら「半角数字」、指定金額以上が対象なら「半角数字+」と入力してください")
+
+	conditionText := widget.NewLabel("継続可能条件")
+	conditionText.TextStyle.Bold = true
+
+	conditionExplain := widget.NewLabel("継続判定に必要な条件を「連続」「累積」の2種類から選んでください")
+
+	monthText := widget.NewLabel("取得月数")
+	monthText.TextStyle.Bold = true
+
+	monthExplain := widget.NewLabel("現在の取得年月を基準として過去何か月分の情報を取得したいかを半角数字で入力してください")
+
+	flagText := widget.NewLabel("当月で達成していなくても対象に含めるか")
+	flagText.TextStyle.Bold = true
+
+	flagExplain := widget.NewLabel("指定した継続期間の達成を、現在の取得年月より過去に達成した場合でも対象として含めるかどうかを\n「含める」「含めない」の2種類から選んでください")
+
+	supButton := widget.NewButton("補足(継続期間と条件について)", func() { newSupWindow(app).Show() })
+	closeButton := widget.NewButton("閉じる", func() { win.Close() })
+
+	win.SetContent(container.NewVBox(
+		mailText,
+		mailExplain,
+		passText,
+		passExplain,
+		creatorText,
+		creaTorExplain,
+		pcUserText,
+		pcUserExplain,
+		durationText,
+		durationExplain,
+		amountText,
+		amountExplain,
+		conditionText,
+		conditionExplain,
+		monthText,
+		monthExplain,
+		flagText,
+		flagExplain,
+		supButton,
+		closeButton,
+	))
+
+	win.CenterOnScreen()
+
+	return &newWindow{win}
+}
+
+func newSupWindow(app fyne.App) *newWindow {
+
+	app.Settings().SetTheme(&myTheme{})
+	win := app.NewWindow("補足")
+
+	supTitle := widget.NewLabel("継続期間と条件の設定について")
+	supTitle.TextStyle.Bold = true
+
+	supText1 := widget.NewLabel("以下の支払い履歴だった支援者に対して\n支援金額1000で実行する場合を例にします")
+	supText2 := widget.NewLabel("①2023/7に実行した場合\n継続期間:6 継続可能条件:連続の場合　⇒対象外（2023/2に支援していないため）\n継続期間:6 継続可能条件:累積の場合　⇒対象（実行した2024/7で累計6ヶ月をちょうど達成したため）")
+	supText3 := widget.NewLabel("②2023/8に実行した場合\n継続期間:6 継続可能条件:連続の場合　⇒対象（連続で6ヶ月をちょうど達成したため）\n継続期間:6 継続可能条件:累積の場合　⇒対象外（2024/7で達成し、支援1ヶ月目の判定になるため）")
+
+	var data = [][]string{[]string{"2024/01", "2024/02", "2024/03", "2024/04", "2024/05", "2024/06", "2024/07", "2024/08"},
+		[]string{"1000", "", "1000", "1000", "1000", "1000", "1000", "1000"}}
+
+	supTable := widget.NewTable(
+		func() (int, int) {
+			return len(data), len(data[0])
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("wide content")
+		},
+		func(i widget.TableCellID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(data[i.Row][i.Col])
+		})
+
+	closeButton := widget.NewButton("閉じる", func() { win.Close() })
+
+	win.SetContent(container.NewVBox(
+		supTitle,
+		supText1,
+		supTable,
+		supText2,
+		supText3,
+		closeButton,
+	))
+
+	win.Resize(fyne.NewSize(900, 300))
+	win.CenterOnScreen()
+
+	return &newWindow{win}
+
+}
+
+func newSaveWindow(app fyne.App) *newWindow {
+
+	app.Settings().SetTheme(&myTheme{})
+	win := app.NewWindow("保存完了")
+
+	saveText := widget.NewLabel("保存が完了しました")
+	saveText.TextStyle.Bold = true
+
+	closeButton := widget.NewButton("閉じる", func() { win.Close() })
+
+	win.SetContent(container.NewVBox(
+		saveText,
+		closeButton,
+	))
+
+	win.CenterOnScreen()
+
+	return &newWindow{win}
+}
+
 func main() {
-	//設定の取得
-	//sets := loadSettings()
 
 	//パラメータ設定の取得
 	cfgs := loadConfig()
 
-	//保存情報の取得
-	sets := loadJson()
+	var sets settings
+	//保存データがあれば保存情報の取得
+	if _, err := os.Stat("save.json"); err == nil {
+		sets = loadJson()
+	}
 
-	//エラー出力用の定義
-	var errorCount = 0
-	var errorTxt string
-
-	app := app.New()
-	app.Settings().SetTheme(&myTheme{})
-	win := app.NewWindow("scrapingFANBOX")
+	mainApp := app.New()
+	mainApp.Settings().SetTheme(&myTheme{})
+	win := mainApp.NewWindow("scrapingFANBOX")
 
 	initText := widget.NewLabel("初期設定")
 	initText.TextStyle.Bold = true
@@ -207,6 +354,8 @@ func main() {
 		sets.ChoiceFlag = value
 	})
 
+	helpButton := widget.NewButton("ヘルプ", func() { newhelpWindow(mainApp).Show() })
+
 	saveButton := widget.NewButton("保存", func() {
 		saveSet := settings{
 			LoginId:    entry1.Text,
@@ -226,15 +375,15 @@ func main() {
 			return
 		}
 
-		f, err := os.Create("save.json")
-		if err != nil {
-			log.Fatal(err)
-		}
+		f := GetFile("save.json")
 
 		f.Write(s)
 
+		newSaveWindow(mainApp).Show()
 	})
-	bootButton := widget.NewButton("実行", func() { app.Quit() })
+	bootButton := widget.NewButton("実行", func() { bootScraping(sets, cfgs) })
+
+	exitButton := widget.NewButton("終了", func() { mainApp.Quit() })
 
 	win.SetContent(container.NewVBox(
 		initText,
@@ -250,8 +399,10 @@ func main() {
 			checkText,
 			setCheck,
 		),
+		helpButton,
 		saveButton,
 		bootButton,
+		exitButton,
 	))
 
 	//保存設定があればフォームに設定
@@ -270,6 +421,22 @@ func main() {
 	win.Resize(fyne.NewSize(600, 400))
 	win.CenterOnScreen()
 	win.ShowAndRun()
+
+}
+
+func bootScraping(sets settings, cfgs config) {
+
+	//エラー出力用の定義
+	var errorCount = 0
+	var errorTxt string
+
+	//ChromeDriver取得用のbatを起動
+	err := exec.Command("./scrapingFanbox.bat").Run()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	//cmd.Wait()
 
 	// chromeを起動
 	driver := agouti.ChromeDriver()
