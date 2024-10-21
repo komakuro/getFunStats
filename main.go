@@ -1,11 +1,15 @@
 package main
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
-	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +18,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/sys/windows/registry"
 
 	"github.com/sclevine/agouti"
 
@@ -230,13 +235,18 @@ func newSupWindow(app fyne.App) *newWindow {
 
 	supTitle := widget.NewLabel("継続期間と条件の設定について")
 	supTitle.TextStyle.Bold = true
-
 	supText1 := widget.NewLabel("以下の支払い履歴だった支援者に対して\n支援金額1000で実行する場合を例にします")
-	supText2 := widget.NewLabel("①2023/7に実行した場合\n継続期間:6 継続可能条件:連続の場合　⇒対象外（2023/2に支援していないため）\n継続期間:6 継続可能条件:累積の場合　⇒対象（実行した2024/7で累計6ヶ月をちょうど達成したため）")
-	supText3 := widget.NewLabel("②2023/8に実行した場合\n継続期間:6 継続可能条件:連続の場合　⇒対象（連続で6ヶ月をちょうど達成したため）\n継続期間:6 継続可能条件:累積の場合　⇒対象外（2024/7で達成し、支援1ヶ月目の判定になるため）")
+	supText2 := widget.NewLabel("①2023/7に実行した場合")
+	supText2.TextStyle.Bold = true
+	supText3 := widget.NewLabel("継続期間:6 継続可能条件:連続の場合　⇒対象外（2023/2に支援していないため）\n継続期間:6 継続可能条件:累積の場合　⇒対象（実行した2024/7で累計6ヶ月をちょうど達成したため）")
+	supText4 := widget.NewLabel("②2023/8に実行した場合")
+	supText4.TextStyle.Bold = true
+	supText5 := widget.NewLabel("継続期間:6 継続可能条件:連続の場合　⇒対象（連続で6ヶ月をちょうど達成したため）\n継続期間:6 継続可能条件:累積の場合　⇒対象外（2024/7で達成し、支援1ヶ月目の判定になるため）")
 
-	var data = [][]string{[]string{"2024/01", "2024/02", "2024/03", "2024/04", "2024/05", "2024/06", "2024/07", "2024/08"},
-		[]string{"1000", "", "1000", "1000", "1000", "1000", "1000", "1000"}}
+	var data = [][]string{
+		{"2024/01", "2024/02", "2024/03", "2024/04", "2024/05", "2024/06", "2024/07", "2024/08"},
+		{"1000", "", "1000", "1000", "1000", "1000", "1000", "1000"},
+	}
 
 	supTable := widget.NewTable(
 		func() (int, int) {
@@ -249,6 +259,12 @@ func newSupWindow(app fyne.App) *newWindow {
 			o.(*widget.Label).SetText(data[i.Row][i.Col])
 		})
 
+	for i := 0; i < len(data[0]); i++ {
+		supTable.SetColumnWidth(i, 75)
+	}
+
+	supTable.StickyRowCount = 1
+
 	closeButton := widget.NewButton("閉じる", func() { win.Close() })
 
 	win.SetContent(container.NewVBox(
@@ -257,10 +273,11 @@ func newSupWindow(app fyne.App) *newWindow {
 		supTable,
 		supText2,
 		supText3,
+		supText4,
+		supText5,
 		closeButton,
 	))
 
-	win.Resize(fyne.NewSize(900, 300))
 	win.CenterOnScreen()
 
 	return &newWindow{win}
@@ -285,6 +302,154 @@ func newSaveWindow(app fyne.App) *newWindow {
 	win.CenterOnScreen()
 
 	return &newWindow{win}
+}
+
+func getChromeDriver() {
+
+	//レジストリからChromeのバージョンを取得
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Google\Chrome\BLBeacon`, registry.QUERY_VALUE)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+
+	kStr, _, err := k.GetStringValue("version")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Google Chrome version:", kStr)
+
+	//一致するバージョンのChromeDriverをダウンロード
+	url := "https://storage.googleapis.com/chrome-for-testing-public/" + kStr + "/win64/chromedriver-win64.zip"
+
+	if err := DownloadFile("chromedriver-win64.zip", url); err != nil {
+		panic(err)
+	}
+
+	//ダウンロードしたzipファイルを解凍する
+	rootPath, _ := os.Getwd()
+	rootDir := filepath.Dir(rootPath)
+
+	zipPath := filepath.Join(rootDir, "scrapingFanbox", "chromedriver-win64.zip")
+	destDir := filepath.Join(rootDir, "scrapingFanbox", "output")
+
+	if err := unZip(zipPath, destDir); err != nil {
+		panic(err)
+	}
+
+	//解凍したChromeDriverをコピーする
+	exePath := filepath.Join(rootDir, "scrapingFanbox", "output", "chromedriver-win64", "chromedriver-win64", "chromedriver.exe")
+	outDir := "C:\\ProgramData\\scrapingFanbox\\chromedriver.exe"
+
+	copyFile(exePath, outDir)
+
+	//ダウンロードしたzipファイルと解凍先ディレクトリを削除
+	os.Remove("chromedriver-win64.zip")
+	os.RemoveAll("output")
+
+	//コピー先のディレクトリにパスを通す
+	os.Setenv("PATH", "C:\\ProgramData\\scrapingFanbox")
+
+}
+
+// 指定のURLからファイルをダウンロードする
+func DownloadFile(filepath string, url string) error {
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// unZip zipファイルを展開する
+func unZip(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	ext := filepath.Ext(src)
+	rep := regexp.MustCompile(ext + "$")
+	dir := filepath.Base(rep.ReplaceAllString(src, ""))
+
+	destDir := filepath.Join(dest, dir)
+	// ファイル名のディレクトリを作成する
+	if err := os.MkdirAll(destDir, os.ModeDir); err != nil {
+		return err
+	}
+
+	for _, f := range r.File {
+		if f.Mode().IsDir() {
+			// ディレクトリは無視して構わない
+			continue
+		}
+		if err := saveUnZipFile(destDir, *f); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// saveUnZipFile 展開したZipファイルをそのままローカルに保存する
+func saveUnZipFile(destDir string, f zip.File) error {
+	// 展開先のパスを設定する
+	destPath := filepath.Join(destDir, f.Name)
+	// 子孫ディレクトリがあれば作成する
+	if err := os.MkdirAll(filepath.Dir(destPath), f.Mode()); err != nil {
+		return err
+	}
+	// Zipファイルを開く
+	rc, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	// 展開先ファイルを作成する
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+	// 展開先ファイルに書き込む
+	if _, err := io.Copy(destFile, rc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyFile(srcDir string, dstDir string) {
+
+	src, err := os.Open(srcDir)
+	if err != nil {
+		panic(err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(dstDir)
+	if err != nil {
+		panic(err)
+	}
+	defer dst.Close()
+
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func main() {
@@ -430,13 +595,8 @@ func bootScraping(sets settings, cfgs config) {
 	var errorCount = 0
 	var errorTxt string
 
-	//ChromeDriver取得用のbatを起動
-	err := exec.Command("./scrapingFanbox.bat").Run()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	//cmd.Wait()
+	//ChromeDriverを取得
+	getChromeDriver()
 
 	// chromeを起動
 	driver := agouti.ChromeDriver()
@@ -456,6 +616,7 @@ func bootScraping(sets settings, cfgs config) {
 			"chromeOptions": map[string][]string{
 				"args": {
 					"user-data-dir=" + cookieDir,
+					"--disable-gpu",
 				},
 			},
 		}),

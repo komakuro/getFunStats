@@ -20,7 +20,6 @@ if %errorlevel% == 0 ( :: コマンドが存在すれば
 rem Chromeのバージョンを確認して、同じバージョンのChromeDriverをダウンロード
 echo webdriver download
 
-
 rem set version=dir /B /AD "C:\Program Files\Google\Chrome\Application"
 set versionPath="C:\Program Files\Google\Chrome\Application"
 for /f "usebackq" %%A in (`dir /B /AD %versionPath%`) do set version=%%A&goto :exit_for
@@ -62,3 +61,4 @@ if not ERRORLEVEL==1 (
 ) else (
     set PATH=%PATH%;C:\ProgramData\scrapingFanbox
 )
+pause
