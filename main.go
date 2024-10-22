@@ -141,11 +141,6 @@ func newhelpWindow(app fyne.App) *newWindow {
 
 	creaTorExplain := widget.NewLabel("FANBOXで設定しているクリエイターIDを入力してください")
 
-	pcUserText := widget.NewLabel("PCユーザー名")
-	pcUserText.TextStyle.Bold = true
-
-	pcUserExplain := widget.NewLabel("PCにログインしているユーザー名を入力してください\nC:\\Users\\XXXX\\Desktop のXXXXの部分を入力してください")
-
 	durationText := widget.NewLabel("継続期間")
 	durationText.TextStyle.Bold = true
 
@@ -181,8 +176,6 @@ func newhelpWindow(app fyne.App) *newWindow {
 		passExplain,
 		creatorText,
 		creaTorExplain,
-		pcUserText,
-		pcUserExplain,
 		durationText,
 		durationExplain,
 		amountText,
