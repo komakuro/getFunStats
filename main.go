@@ -64,7 +64,7 @@ func ReadCell(f *excelize.File, sheetName string, cellPosition string) string {
 }
 
 func loadConfig() config {
-	f, err := os.Open("./exe/settings.json")
+	f, err := os.Open("settings.json")
 	if err != nil {
 		panic("loadconfig os.Open err:" + err.Error())
 	}
