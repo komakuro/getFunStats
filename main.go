@@ -30,7 +30,6 @@ type settings struct {
 	LoginId    string
 	Password   string
 	CreatorId  string
-	PcUser     string
 	Duration   string
 	Amount     string
 	Condition  string
@@ -89,31 +88,6 @@ func loadJson() settings {
 	_ = json.NewDecoder(f).Decode(&stg)
 
 	//fmt.Println(cfg)
-	return stg
-}
-
-func LoadSettings() settings {
-
-	//フォーマットを開く
-	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
-	if err != nil {
-		panic("loadConfig excelize.OpenFile err:" + err.Error())
-	}
-	defer f.Close()
-
-	var stg settings
-
-	//フォーマット内の指定されたセルの値を取得
-	stg.CreatorId = ReadCell(f, "設定", "C6")
-	stg.LoginId = ReadCell(f, "設定", "C4")
-	stg.Password = ReadCell(f, "設定", "C5")
-	stg.PcUser = ReadCell(f, "設定", "C7")
-	stg.Duration = ReadCell(f, "設定", "C11")
-	stg.Amount = ReadCell(f, "設定", "C12")
-	stg.Condition = ReadCell(f, "設定", "C13")
-	stg.GetMonth = ReadCell(f, "設定", "C14")
-	stg.ChoiceFlag = ReadCell(f, "設定", "C15")
-
 	return stg
 }
 
@@ -349,7 +323,7 @@ func getChromeDriver() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Google Chrome version:", kStr)
+	//fmt.Println("Google Chrome version:", kStr)
 
 	//一致するバージョンのChromeDriverをダウンロード
 	url := "https://storage.googleapis.com/chrome-for-testing-public/" + kStr + "/win64/chromedriver-win64.zip"
@@ -504,25 +478,23 @@ func main() {
 	entry1 := widget.NewEntry()
 	entry2 := widget.NewEntry()
 	entry3 := widget.NewEntry()
-	entry4 := widget.NewEntry()
 
 	initForm := &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
 			{Text: "メールアドレス", Widget: entry1},
 			{Text: "パスワード", Widget: entry2},
 			{Text: "クリエイターID", Widget: entry3},
-			{Text: "PCユーザー名", Widget: entry4},
 		},
 	}
 
 	setText := widget.NewLabel("継続条件設定")
 	setText.TextStyle.Bold = true
 
-	entry5 := widget.NewEntry()
+	entry4 := widget.NewEntry()
 
 	setForm1 := &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
-			{Text: "　　　継続期間", Widget: entry5},
+			{Text: "　　　継続期間", Widget: entry4},
 		},
 	}
 
@@ -533,13 +505,13 @@ func main() {
 		sets.Condition = value
 	})
 
+	entry5 := widget.NewEntry()
 	entry6 := widget.NewEntry()
-	entry7 := widget.NewEntry()
 
 	setForm2 := &widget.Form{
 		Items: []*widget.FormItem{ // we can specify items in the constructor
-			{Text: "継続プラン金額", Widget: entry6},
-			{Text: "取得月数", Widget: entry7},
+			{Text: "継続プラン金額", Widget: entry5},
+			{Text: "取得月数", Widget: entry6},
 		},
 	}
 
@@ -557,11 +529,10 @@ func main() {
 			LoginId:    entry1.Text,
 			Password:   entry2.Text,
 			CreatorId:  entry3.Text,
-			PcUser:     entry4.Text,
-			Duration:   entry5.Text,
-			Amount:     entry6.Text,
+			Duration:   entry4.Text,
+			Amount:     entry5.Text,
 			Condition:  setRadio.Selected,
-			GetMonth:   entry7.Text,
+			GetMonth:   entry6.Text,
 			ChoiceFlag: setCheck.Selected,
 		}
 
@@ -612,10 +583,9 @@ func main() {
 		entry1.SetText(sets.LoginId)
 		entry2.SetText(sets.Password)
 		entry3.SetText(sets.CreatorId)
-		entry4.SetText(sets.PcUser)
-		entry5.SetText(sets.Duration)
-		entry6.SetText(sets.Amount)
-		entry7.SetText(sets.GetMonth)
+		entry4.SetText(sets.Duration)
+		entry5.SetText(sets.Amount)
+		entry6.SetText(sets.GetMonth)
 		setRadio.SetSelected(sets.Condition)
 		setCheck.SetSelected(sets.ChoiceFlag)
 	}
@@ -641,7 +611,9 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 	defer driver.Stop() // chromeを終了
 
 	//Cookieの格納されたディレクトリが存在するか確認
-	cookieDir := "C:\\Users\\" + sets.PcUser + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+	userDir, _ := os.UserHomeDir()
+	cookieDir := userDir + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+
 	if f, err := os.Stat(cookieDir); os.IsNotExist(err) || !f.IsDir() {
 		errorCount = errorCount + 1
 		errorTxt = errorTxt + "指定のフォルダが見つかりません\nPCユーザー名が正しいか確認してください\n"
