@@ -607,11 +607,6 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 	userDir, _ := os.UserHomeDir()
 	cookieDir := userDir + "\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
 
-	if f, err := os.Stat(cookieDir); os.IsNotExist(err) || !f.IsDir() {
-		errorCount = errorCount + 1
-		errorTxt = errorTxt + "指定のフォルダが見つかりません\nPCユーザー名が正しいか確認してください\n"
-	}
-
 	//支援者一覧ページを開く
 	page, _ := driver.NewPage(
 		agouti.Desired(agouti.Capabilities{
@@ -703,8 +698,6 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 
 	}
 
-	fmt.Println(payStatsList)
-
 	//スライスの情報を整理するためのマップを作成
 	var userPaySeqMap = make(map[string]map[string]int)
 
@@ -739,8 +732,6 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 
 		userPaySeqMap[tmpPayUser] = tmpPaySeqMap
 	}
-
-	fmt.Println(userPaySeqMap)
 
 	userResultMap := make(map[string]bool)
 	checkTime := time.Now()
@@ -847,8 +838,6 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 		}
 	}
 
-	fmt.Println(userResultMap)
-
 	//フォーマットを開く
 	f, err := excelize.OpenFile("入出力フォーマット.xlsx")
 	if err != nil {
@@ -935,6 +924,42 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 	if err != nil {
 		panic("loadConfig excelize.Close err:" + err.Error())
 	}
+
+	//ログを出力
+	//payStatsListの情報を出力
+	listStr := ""
+	for i := 0; i < len(payStatsList); i++ {
+		listStr = listStr + payStatsList[i].UserName + ","
+		listStr = listStr + payStatsList[i].PayTime + ","
+		listStr = listStr + payStatsList[i].PayAmount + "," + "\n"
+	}
+
+	//userPaySeqMapの情報を出力
+	payStr := ""
+	for iUser, iPaySeqMap := range userPaySeqMap {
+
+		for iYearMonth := range iPaySeqMap {
+			payStr = payStr + iUser + ","
+			payStr = payStr + iYearMonth + ","
+			payStr = payStr + strconv.Itoa(iPaySeqMap[iYearMonth]) + "\n"
+		}
+	}
+
+	//userResultMapの情報を出力
+	resultStr := ""
+	for iUser := range userResultMap {
+		resultStr = resultStr + iUser + ","
+		resultStr = resultStr + strconv.FormatBool(userResultMap[iUser]) + "\n"
+	}
+
+	var listLogFile = GetFile("LogList.txt")
+	WriteFile(listLogFile, listStr)
+
+	var payLogFile = GetFile("LogPay.txt")
+	WriteFile(payLogFile, payStr)
+
+	var resultLogFile = GetFile("LogResult.txt")
+	WriteFile(resultLogFile, resultStr)
 
 	return errorCount, errorTxt
 
