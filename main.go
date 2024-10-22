@@ -304,6 +304,37 @@ func newSaveWindow(app fyne.App) *newWindow {
 	return &newWindow{win}
 }
 
+func newCompWindow(count int, txt string, app fyne.App) *newWindow {
+
+	app.Settings().SetTheme(&myTheme{})
+	win := app.NewWindow("出力完了")
+
+	var compText string
+
+	if count == 0 {
+		compText = "出力に成功しました"
+	} else {
+		compText = "出力に失敗しました\n詳細はErrorLog.txtを確認してください"
+
+		var logFile = GetFile("ErrorLog.txt")
+		WriteFile(logFile, txt)
+	}
+
+	compLabel := widget.NewLabel(compText)
+	compLabel.TextStyle.Bold = true
+
+	closeButton := widget.NewButton("閉じる", func() { win.Close() })
+
+	win.SetContent(container.NewVBox(
+		compLabel,
+		closeButton,
+	))
+
+	win.CenterOnScreen()
+
+	return &newWindow{win}
+}
+
 func getChromeDriver() {
 
 	//レジストリからChromeのバージョンを取得
@@ -546,7 +577,13 @@ func main() {
 
 		newSaveWindow(mainApp).Show()
 	})
-	bootButton := widget.NewButton("実行", func() { bootScraping(sets, cfgs) })
+	bootButton := widget.NewButton("実行", func() {
+
+		count, txt := bootScraping(sets, cfgs)
+
+		newCompWindow(count, txt, mainApp).Show()
+
+	})
 
 	exitButton := widget.NewButton("終了", func() { mainApp.Quit() })
 
@@ -589,10 +626,10 @@ func main() {
 
 }
 
-func bootScraping(sets settings, cfgs config) {
+func bootScraping(sets settings, cfgs config) (int, string) {
 
 	//エラー出力用の定義
-	var errorCount = 0
+	var errorCount int = 0
 	var errorTxt string
 
 	//ChromeDriverを取得
@@ -934,16 +971,7 @@ func bootScraping(sets settings, cfgs config) {
 		panic("loadConfig excelize.Close err:" + err.Error())
 	}
 
-	//エラーがどこかで発生していた場合はエラー内容をログ出力する
-	if errorCount == 0 {
-		fmt.Println("出力に成功しました")
-
-	} else {
-		var logFile = GetFile("ErrorLog.txt")
-		WriteFile(logFile, errorTxt)
-
-		fmt.Println("出力に失敗しました、詳細はErrorLog.txtを確認してください")
-	}
+	return errorCount, errorTxt
 
 }
 
