@@ -311,7 +311,7 @@ func getChromeDriver() {
 	}
 	defer k.Close()
 
-	kStr, _, err := k.GetStringValue("version")
+	version, _, err := k.GetStringValue("version")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -319,7 +319,7 @@ func getChromeDriver() {
 	//fmt.Println("Google Chrome version:", kStr)
 
 	//一致するバージョンのChromeDriverをダウンロード
-	url := "https://storage.googleapis.com/chrome-for-testing-public/" + kStr + "/win64/chromedriver-win64.zip"
+	url := "https://storage.googleapis.com/chrome-for-testing-public/" + version + "/win64/chromedriver-win64.zip"
 
 	if err := DownloadFile("chromedriver-win64.zip", url); err != nil {
 		panic(err)
@@ -465,7 +465,7 @@ func main() {
 	mainApp.Settings().SetTheme(&myTheme{})
 	win := mainApp.NewWindow("scrapingFANBOX")
 
-	initText := widget.NewLabel("初期設定")
+	initText := widget.NewLabel("■初期設定")
 	initText.TextStyle.Bold = true
 
 	entry1 := widget.NewEntry()
@@ -480,7 +480,7 @@ func main() {
 		},
 	}
 
-	setText := widget.NewLabel("継続条件設定")
+	setText := widget.NewLabel("■継続条件設定")
 	setText.TextStyle.Bold = true
 
 	entry4 := widget.NewEntry()
@@ -508,7 +508,7 @@ func main() {
 		},
 	}
 
-	checkText := widget.NewLabel("過去の達成対象者を含めるか")
+	checkText := widget.NewLabel("　過去の対象者\n　　を含めるか")
 	checkText.TextStyle.Bold = true
 
 	setCheck := widget.NewRadioGroup([]string{"含めない", "含める"}, func(value string) {
@@ -716,7 +716,7 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 		tmpPayDate = tmpPayDate[:7]
 
 		var tmpPayAmount string = payStatsList[i].PayAmount
-		var tmpPayAmountInt, _ = strconv.Atoi(tmpPayAmount)
+		var tmpPayAmountInt, _ = strconv.Atoi(strings.ReplaceAll(tmpPayAmount, ",", ""))
 		var tmpPayAmountInt2, _ = tmpPaySeqMap[tmpPayDate]
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
@@ -890,7 +890,7 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 
 		m, _ := strconv.Atoi(sets.GetMonth)
 
-		//TODO細かい正しさは確かめる↓
+		//現在の実行年月－取得月数＋１を基準として、ひと月ずつ取得月数分進めていく
 		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Compare(checkTime) <= 0; iYearMonth = iYearMonth.AddDate(0, 1, 0) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
 
@@ -931,7 +931,7 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 	for i := 0; i < len(payStatsList); i++ {
 		listStr = listStr + payStatsList[i].UserName + ","
 		listStr = listStr + payStatsList[i].PayTime + ","
-		listStr = listStr + payStatsList[i].PayAmount + "," + "\n"
+		listStr = listStr + payStatsList[i].PayAmount + "\n"
 	}
 
 	//userPaySeqMapの情報を出力
