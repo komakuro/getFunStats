@@ -1,5 +1,4 @@
-module github.com/komakuro/scrapingFanbox
-
+module github.com/komakuro/getFunStats
 go 1.23.2
 
 require (
