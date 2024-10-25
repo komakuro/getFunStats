@@ -326,19 +326,19 @@ func getChromeDriver() {
 	}
 
 	//ダウンロードしたzipファイルを解凍する
-	rootPath, _ := os.Getwd()
+	rootPath, _ := os.Executable()
 	rootDir := filepath.Dir(rootPath)
 
-	zipPath := filepath.Join(rootDir, "scrapingFanbox", "chromedriver-win64.zip")
-	destDir := filepath.Join(rootDir, "scrapingFanbox", "output")
+	zipPath := filepath.Join(rootDir, "chromedriver-win64.zip")
+	destDir := filepath.Join(rootDir, "output")
 
 	if err := unZip(zipPath, destDir); err != nil {
 		panic(err)
 	}
 
 	//解凍したChromeDriverをコピーする
-	exePath := filepath.Join(rootDir, "scrapingFanbox", "output", "chromedriver-win64", "chromedriver-win64", "chromedriver.exe")
-	outDir := "C:\\ProgramData\\scrapingFanbox\\chromedriver.exe"
+	exePath := filepath.Join(rootDir, "output", "chromedriver-win64", "chromedriver-win64", "chromedriver.exe")
+	outDir := "C:\\ProgramData\\getFunStats\\chromedriver.exe"
 
 	copyFile(exePath, outDir)
 
@@ -347,7 +347,7 @@ func getChromeDriver() {
 	os.RemoveAll("output")
 
 	//コピー先のディレクトリにパスを通す
-	os.Setenv("PATH", "C:\\ProgramData\\scrapingFanbox")
+	os.Setenv("PATH", "C:\\ProgramData\\getFunStats")
 
 }
 
@@ -543,7 +543,7 @@ func main() {
 	})
 	bootButton := widget.NewButton("実行", func() {
 
-		count, txt := bootScraping(sets, cfgs)
+		count, txt := getFunStats(sets, cfgs)
 
 		newCompWindow(count, txt, mainApp).Show()
 
@@ -589,7 +589,7 @@ func main() {
 
 }
 
-func bootScraping(sets settings, cfgs config) (int, string) {
+func getFunStats(sets settings, cfgs config) (int, string) {
 
 	//エラー出力用の定義
 	var errorCount int = 0
@@ -613,7 +613,7 @@ func bootScraping(sets settings, cfgs config) (int, string) {
 			"chromeOptions": map[string][]string{
 				"args": {
 					"user-data-dir=" + cookieDir,
-					"--disable-gpu",
+					//"--disable-gpu",
 				},
 			},
 		}),
