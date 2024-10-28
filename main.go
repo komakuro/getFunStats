@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -54,15 +53,6 @@ type newWindow struct {
 	fyne.Window
 }
 
-func ReadCell(f *excelize.File, sheetName string, cellPosition string) string {
-	ret, err := f.GetCellValue(sheetName, cellPosition)
-	if err != nil {
-		panic("readCell err:" + err.Error())
-	}
-
-	return ret
-}
-
 func loadConfig() config {
 	f, err := os.Open("settings.json")
 	if err != nil {
@@ -77,7 +67,7 @@ func loadConfig() config {
 	return cfg
 }
 
-func loadJson() settings {
+func loadSettings() settings {
 	f, err := os.Open("./save.json")
 	if err != nil {
 		panic("loadconfig os.Open err:" + err.Error())
@@ -89,12 +79,6 @@ func loadJson() settings {
 
 	//fmt.Println(cfg)
 	return stg
-}
-
-func ItoS(screenshotNum *int) string {
-	ret := strconv.Itoa(*screenshotNum)
-	*screenshotNum += 1
-	return ret
 }
 
 func GetFile(filename string) *os.File {
@@ -114,11 +98,6 @@ func WriteFile(f *os.File, writeString string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func UpdateTime(clock *widget.Label) {
-	formatted := time.Now().Format("Time: 03:04:05")
-	clock.SetText(formatted)
 }
 
 func newhelpWindow(app fyne.App) *newWindow {
@@ -316,8 +295,6 @@ func getChromeDriver() {
 		log.Fatal(err)
 	}
 
-	//fmt.Println("Google Chrome version:", kStr)
-
 	//一致するバージョンのChromeDriverをダウンロード
 	url := "https://storage.googleapis.com/chrome-for-testing-public/" + version + "/win64/chromedriver-win64.zip"
 
@@ -337,17 +314,22 @@ func getChromeDriver() {
 	}
 
 	//解凍したChromeDriverをコピーする
-	exePath := filepath.Join(rootDir, "output", "chromedriver-win64", "chromedriver-win64", "chromedriver.exe")
-	outDir := "C:\\ProgramData\\getFunStats\\chromedriver.exe"
+	exefile := filepath.Join(rootDir, "output", "chromedriver-win64", "chromedriver.exe")
+	outDir := "C:\\ProgramData\\getFunStats"
+	outfile := filepath.Join(outDir, "chromedriver.exe")
 
-	copyFile(exePath, outDir)
+	if f, err := os.Stat(outDir); os.IsNotExist(err) || !f.IsDir() {
+		os.Mkdir(outDir, os.ModeDir)
+	}
+
+	copyFile(exefile, outfile)
 
 	//ダウンロードしたzipファイルと解凍先ディレクトリを削除
 	os.Remove("chromedriver-win64.zip")
 	os.RemoveAll("output")
 
 	//コピー先のディレクトリにパスを通す
-	os.Setenv("PATH", "C:\\ProgramData\\getFunStats")
+	os.Setenv("PATH", outDir)
 
 }
 
@@ -378,13 +360,8 @@ func unZip(src, dest string) error {
 	}
 	defer r.Close()
 
-	ext := filepath.Ext(src)
-	rep := regexp.MustCompile(ext + "$")
-	dir := filepath.Base(rep.ReplaceAllString(src, ""))
-
-	destDir := filepath.Join(dest, dir)
-	// ファイル名のディレクトリを作成する
-	if err := os.MkdirAll(destDir, os.ModeDir); err != nil {
+	// 出力先のディレクトリを作成する
+	if err := os.MkdirAll(dest, os.ModeDir); err != nil {
 		return err
 	}
 
@@ -393,7 +370,7 @@ func unZip(src, dest string) error {
 			// ディレクトリは無視して構わない
 			continue
 		}
-		if err := saveUnZipFile(destDir, *f); err != nil {
+		if err := saveUnZipFile(dest, *f); err != nil {
 			return err
 		}
 	}
@@ -458,12 +435,12 @@ func main() {
 	var sets settings
 	//保存データがあれば保存情報の取得
 	if _, err := os.Stat("save.json"); err == nil {
-		sets = loadJson()
+		sets = loadSettings()
 	}
 
 	mainApp := app.New()
 	mainApp.Settings().SetTheme(&myTheme{})
-	win := mainApp.NewWindow("scrapingFANBOX")
+	win := mainApp.NewWindow("getFunStats")
 
 	initText := widget.NewLabel("■初期設定")
 	initText.TextStyle.Bold = true
