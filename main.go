@@ -682,7 +682,7 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 			}
 
 			if j%2 == 1 {
-				oneLine.PayAmount = strings.ReplaceAll(txt, "\u00A5", "")
+				oneLine.PayAmount = strings.ReplaceAll(strings.ReplaceAll(txt, ",", ""), "\u00A5", "")
 				//一行分の情報を取り終わったので、取得した支援者名、支払い日時、支払金額をスライスに格納
 				payStatsList = append(payStatsList, oneLine)
 				//次の一行の情報の取得処理を開始するにあたって、oneLineを初期化する
@@ -716,7 +716,7 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 		tmpPayDate = tmpPayDate[:7]
 
 		var tmpPayAmount string = payStatsList[i].PayAmount
-		var tmpPayAmountInt, _ = strconv.Atoi(strings.ReplaceAll(tmpPayAmount, ",", ""))
+		var tmpPayAmountInt, _ = strconv.Atoi(tmpPayAmount)
 		var tmpPayAmountInt2, _ = tmpPaySeqMap[tmpPayDate]
 
 		//マップ内に該当の支払い月が存在するか確認し、存在すれば支払金額を合算
