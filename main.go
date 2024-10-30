@@ -722,7 +722,7 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 		m, _ := strconv.Atoi(sets.GetMonth)
 
 		//現在の実行年月を基準として、ひと月ずつ取得月数分さかのぼっていく
-		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, 0) {
+		for iYearMonth := checkTime; iYearMonth.Compare(checkTime.AddDate(0, -m+1, 0)) >= 0; iYearMonth = iYearMonth.AddDate(0, -1, -iYearMonth.Day()+1) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
 			payAmountInt := iPaySeqMap[yearMonth]
 
@@ -868,7 +868,7 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 		m, _ := strconv.Atoi(sets.GetMonth)
 
 		//現在の実行年月－取得月数＋１を基準として、ひと月ずつ取得月数分進めていく
-		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Compare(checkTime) <= 0; iYearMonth = iYearMonth.AddDate(0, 1, 0) {
+		for iYearMonth := checkTime.AddDate(0, -m+1, 0); iYearMonth.Compare(checkTime) <= 0; iYearMonth = iYearMonth.AddDate(0, 1, -iYearMonth.Day()+1) {
 			yearMonth := GetYearMonthFromTime(iYearMonth)
 
 			yaerMonthCell, _ := excelize.CoordinatesToCellName(yearMonthColoumId, yearMonthRowId)
