@@ -572,6 +572,9 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 	var errorCount int = 0
 	var errorTxt string
 
+	//時刻をJSTに設定
+	jst, _ := time.LoadLocation("Asia/Tokyo")
+
 	//ChromeDriverを取得
 	getChromeDriver()
 
@@ -711,7 +714,7 @@ func getFunStats(sets settings, cfgs config) (int, string) {
 	}
 
 	userResultMap := make(map[string]bool)
-	checkTime := time.Now()
+	checkTime := time.Now().In(jst)
 	checkMonth := GetYearMonthFromTime(checkTime)
 	durationTime, _ := strconv.Atoi(strings.ReplaceAll(sets.Duration, "+", ""))
 	amountInt, _ := strconv.Atoi(strings.ReplaceAll(sets.Amount, "+", ""))
